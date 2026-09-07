@@ -1,0 +1,98 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: laravel_app
+    # volumes:
+    #   - ./laravel_app:/var/www/html
+    ports:
+      - "${APP_PORT:-8000}:80" # akses dari host => localhost:8000 (ubah bila perlu)
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: "postgres"
+      # DB_HOST: "localhost"  # gunakan "localhost" jika database ada di host yang sama
+      DB_PORT: "${DB_PORT:-5432}"
+      DB_DATABASE: "${DB_NAME:-cismart_db}"
+      DB_USERNAME: "${DB_USERNAME:-postgres}"
+      DB_PASSWORD: "${DB_PASSWORD:-root}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_URL: "${APP_URL:-https://cismart.id}"
+      ML_SERVICE_URL: "http://ml_service:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # ml_service opsional (profile ml) — tidak memblokir start app
+    networks:
+      - laravel
+
+  # Build ML berat (pip + compiler). Aktifkan hanya saat perlu:
+  # docker compose --profile ml up -d --build
+  ml_service:
+    profiles: ["ml"]
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    container_name: cismart_ml_service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ml_models:/app/models
+      - ml_data:/app/data
+      - ml_logs:/app/logs
+    environment:
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  postgres:
+    image: postgres:15
+    container_name: laravel_postgres
+    environment:
+      # POSTGRES_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
+      POSTGRES_DB: "${DB_NAME:-cismart_db}"
+      POSTGRES_USER: "${DB_USERNAME:-postgres}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-root}"
+    ports:
+      - "5433:5432" # akses dari host => localhost:5433 (ubah bila perlu)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    profiles: ["tools"]
+    image: dpage/pgadmin4:7
+    container_name: laravel_pgadmin
+    restart: always
+    ports:
+      - "8001:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - laravel
+networks:
+  laravel:
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  ml_models:
+  ml_data:
+  ml_logs:

@@ -1,0 +1,47 @@
+# Kurangi context build Docker (paling berpengaruh ke kecepatan)
+.git
+.gitignore
+.gitattributes
+.idea
+.vscode
+.cursor
+**/.DS_Store
+
+# Dependensi di-install ulang di dalam image
+laravel_app/node_modules
+laravel_app/vendor
+laravel_app/public/hot
+laravel_app/public/storage
+laravel_app/storage/logs/*
+laravel_app/storage/framework/cache/*
+laravel_app/storage/framework/sessions/*
+laravel_app/storage/framework/views/*
+laravel_app/storage/app/public/*
+!laravel_app/storage/logs/.gitignore
+!laravel_app/storage/framework/cache/.gitignore
+!laravel_app/storage/framework/sessions/.gitignore
+!laravel_app/storage/framework/views/.gitignore
+
+# Tidak dibutuhkan untuk image app
+machine_learning
+ml_service
+*.md
+*.ps1
+*.sh
+!docker/**/*.sh
+debug_*
+deploy_*
+train_*
+DOCKER_*.md
+ML_*.md
+TASK_*.md
+DEPLOYMENT_*.md
+readme.md
+
+# Env & secrets lokal
+.env
+.env.*
+!.env.example
+laravel_app/.env
+laravel_app/.env.*
+!laravel_app/.env.example

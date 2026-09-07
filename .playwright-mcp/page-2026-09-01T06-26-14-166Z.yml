@@ -1,0 +1,156 @@
+- generic [active] [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - generic [ref=f4e5]:
+      - generic [ref=f4e6]: Melayani seluruh Indonesia - Khusus Produk UMKM Cilacap
+      - generic [ref=f4e11]:
+        - generic [ref=f4e12]: 📞 (0282) 123-4567
+        - generic [ref=f4e13]: ✉️ info@cismart.id
+    - generic [ref=f4e16]:
+      - navigation [ref=f4e17]:
+        - button "Beranda" [ref=f4e18]
+        - button "Produk" [ref=f4e19]
+        - button "UMKM" [ref=f4e20]
+      - generic [ref=f4e21]:
+        - button [ref=f4e22]
+        - button "Masuk" [ref=f4e25]
+  - main [ref=f4e26]:
+    - generic [ref=f4e27]:
+      - generic [ref=f4e31]:
+        - generic [ref=f4e32]:
+          - generic [ref=f4e33]: ✨ Terdepan dalam E-commerce UMKM
+          - heading "Pasar Online UMKM Cilacap" [level=1] [ref=f4e35]:
+            - text: Pasar Online
+            - generic [ref=f4e36]: UMKM Cilacap
+          - paragraph [ref=f4e37]: Temukan ribuan produk unggulan dari UMKM Cilacap. Dari makanan khas, kerajinan tangan, hingga produk inovatif. Belanja mudah, dukung ekonomi lokal! 🚀
+          - generic [ref=f4e38]:
+            - button "Jelajahi Produk" [ref=f4e39]
+            - button "Bergabung Komunitas" [ref=f4e42]
+          - generic [ref=f4e43]:
+            - generic [ref=f4e44]:
+              - generic [ref=f4e45]: 200+
+              - generic [ref=f4e46]: Produk UMKM
+            - generic [ref=f4e47]:
+              - generic [ref=f4e48]: 50+
+              - generic [ref=f4e49]: Penjual Terpercaya
+            - generic [ref=f4e50]:
+              - generic [ref=f4e51]: 500+
+              - generic [ref=f4e52]: Pelanggan Puas
+        - generic [ref=f4e54]:
+          - img "ISMART Logo" [ref=f4e56]
+          - generic [ref=f4e57]: Terpercaya ✓
+      - generic [ref=f4e59]:
+        - generic [ref=f4e60]:
+          - heading "Produk Unggulan" [level=2] [ref=f4e61]
+          - paragraph [ref=f4e62]: Produk terbaik pilihan dari UMKM Cilacap
+        - button "Lihat Semua" [ref=f4e63]
+      - generic [ref=f4e67]:
+        - generic [ref=f4e68]:
+          - heading "UMKM Terpopuler" [level=2] [ref=f4e69]
+          - paragraph [ref=f4e70]: Toko-toko UMKM dengan rating terbaik dan produk berkualitas tinggi
+        - button "Jelajahi Semua UMKM" [ref=f4e72]
+      - generic [ref=f4e75]:
+        - generic [ref=f4e76]:
+          - heading "Mengapa Memilih CISMART?" [level=2] [ref=f4e77]
+          - paragraph [ref=f4e78]: Platform terpercaya yang menghubungkan UMKM Cilacap dengan konsumen di seluruh Indonesia
+        - generic [ref=f4e79]:
+          - generic [ref=f4e80]:
+            - generic [ref=f4e81]: 🛒
+            - heading "Mudah & Praktis" [level=3] [ref=f4e82]
+            - paragraph [ref=f4e83]: Berbelanja produk UMKM Cilacap dari rumah dengan pengalaman yang mudah dan menyenangkan.
+          - generic [ref=f4e84]:
+            - generic [ref=f4e85]: ⭐
+            - heading "Produk Berkualitas" [level=3] [ref=f4e86]
+            - paragraph [ref=f4e87]: Semua produk telah melalui kurasi ketat untuk memastikan kualitas terbaik bagi konsumen.
+          - generic [ref=f4e88]:
+            - generic [ref=f4e89]: 💝
+            - heading "Dukung Ekonomi Lokal" [level=3] [ref=f4e90]
+            - paragraph [ref=f4e91]: Setiap pembelian Anda membantu mengembangkan ekonomi UMKM di Kabupaten Cilacap.
+          - generic [ref=f4e92]:
+            - generic [ref=f4e93]: 🚚
+            - heading "Pengiriman Cepat" [level=3] [ref=f4e94]
+            - paragraph [ref=f4e95]: Jaringan logistik terintegrasi memastikan produk sampai dengan cepat dan aman.
+      - generic [ref=f4e99]:
+        - heading "Siap Memulai Berbisnis Online?" [level=2] [ref=f4e100]
+        - paragraph [ref=f4e101]: Bergabunglah dengan ribuan UMKM Cilacap yang telah merasakan kemudahan berjualan di platform ISMART.
+        - generic [ref=f4e102]:
+          - button "Daftar Sebagai Penjual" [ref=f4e103]
+          - button "Pelajari Lebih Lanjut" [ref=f4e104]
+      - generic [ref=f4e106]:
+        - generic [ref=f4e107]:
+          - heading "Hubungi Kami" [level=2] [ref=f4e108]
+          - paragraph [ref=f4e109]: Tim CISMART siap membantu Anda. Hubungi kami untuk pertanyaan, dukungan teknis, atau konsultasi bisnis UMKM.
+          - generic [ref=f4e110]:
+            - generic [ref=f4e116]:
+              - heading "Alamat Kantor" [level=3] [ref=f4e117]
+              - paragraph [ref=f4e118]: Jl. Sudirman No. 123 Cilacap, Jawa Tengah 53211
+            - generic [ref=f4e123]:
+              - heading "Telepon" [level=3] [ref=f4e124]
+              - paragraph [ref=f4e125]: (0282) 123-4567
+              - 'link "WhatsApp: 0812-3456-7890" [ref=f4e126] [cursor=pointer]':
+                - /url: https://wa.me/6281234567890
+            - generic [ref=f4e131]:
+              - heading "Email" [level=3] [ref=f4e132]
+              - paragraph [ref=f4e133]: info@cismart.id
+              - paragraph [ref=f4e134]: support@cismart.id
+        - generic [ref=f4e135]:
+          - heading "Mulai Sekarang" [level=2] [ref=f4e136]
+          - generic [ref=f4e137]:
+            - generic [ref=f4e138]:
+              - heading "Untuk Pembeli" [level=3] [ref=f4e139]
+              - paragraph [ref=f4e140]: Temukan produk UMKM terbaik dari Cilacap dengan kualitas terjamin dan harga terjangkau.
+              - button "Mulai Belanja" [ref=f4e141]
+            - generic [ref=f4e142]:
+              - heading "Untuk UMKM" [level=3] [ref=f4e143]
+              - paragraph [ref=f4e144]: Bergabunglah dengan platform terpercaya untuk memperluas jangkauan bisnis Anda.
+              - button "Daftar Sebagai Penjual" [ref=f4e145]
+            - generic [ref=f4e146]:
+              - heading "Bergabung Komunitas" [level=3] [ref=f4e147]
+              - paragraph [ref=f4e148]: Dapatkan tips, berbagi pengalaman, dan terhubung dengan sesama pelaku UMKM.
+              - button "Gabung Komunitas" [ref=f4e149]
+  - contentinfo [ref=f4e150]:
+    - generic [ref=f4e152]:
+      - generic [ref=f4e153]:
+        - img "CISMART Logo" [ref=f4e155]
+        - paragraph [ref=f4e156]: Platform digital untuk mendukung UMKM Cilacap berkembang dan menjangkau pasar yang lebih luas di seluruh Indonesia.
+        - generic [ref=f4e157]:
+          - button [ref=f4e158]
+          - button [ref=f4e161]
+          - button [ref=f4e164]
+      - generic [ref=f4e167]:
+        - heading "Menu Cepat" [level=4] [ref=f4e168]
+        - list [ref=f4e169]:
+          - listitem [ref=f4e170]:
+            - button "Beranda" [ref=f4e171]
+          - listitem [ref=f4e172]:
+            - button "Produk UMKM" [ref=f4e173]
+          - listitem [ref=f4e174]:
+            - button "Komunitas" [ref=f4e175]
+          - listitem [ref=f4e176]:
+            - button "Blog & Artikel" [ref=f4e177]
+          - listitem [ref=f4e178]:
+            - button "Dashboard" [ref=f4e179]
+      - generic [ref=f4e180]:
+        - heading "Dukungan" [level=4] [ref=f4e181]
+        - list [ref=f4e182]:
+          - listitem [ref=f4e183]:
+            - button "Cara Berbelanja" [ref=f4e184]
+          - listitem [ref=f4e185]:
+            - button "Cara Berjualan" [ref=f4e186]
+          - listitem [ref=f4e187]:
+            - button "Bantuan & FAQ" [ref=f4e188]
+          - listitem [ref=f4e189]:
+            - button "Syarat & Ketentuan" [ref=f4e190]
+          - listitem [ref=f4e191]:
+            - button "Kebijakan Privasi" [ref=f4e192]
+      - generic [ref=f4e193]:
+        - heading "Kontak Kami" [level=4] [ref=f4e194]
+        - generic [ref=f4e195]:
+          - generic [ref=f4e196]: Jl. Sudirman No. 123 Cilacap, Jawa Tengah 53211
+          - 'link "WhatsApp: 0812-3456-7890" [ref=f4e204] [cursor=pointer]':
+            - /url: https://wa.me/6281234567890
+          - generic [ref=f4e205]: info@cismart.id
+    - generic [ref=f4e211]:
+      - paragraph [ref=f4e212]: © 2026 CISMART. Semua hak cipta dilindungi.
+      - generic [ref=f4e213]:
+        - generic [ref=f4e214]: Powered by
+        - generic [ref=f4e215]: Pemerintah Kabupaten Cilacap
