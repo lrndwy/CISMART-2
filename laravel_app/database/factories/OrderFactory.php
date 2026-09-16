@@ -33,7 +33,7 @@ class OrderFactory extends Factory
             'shipping_city' => fake()->randomElement(['Cilacap', 'Purwokerto', 'Yogyakarta', 'Semarang', 'Surabaya']),
             'shipping_postal_code' => fake()->numerify('53###'),
             'shipping_notes' => fake()->optional(0.3)->sentence(),
-            'payment_method' => fake()->randomElement(['whatsapp-order', 'bank-transfer', 'cod']),
+            'payment_method' => fake()->randomElement(['cod', 'qris']),
             'shipping_method' => fake()->randomElement(['regular', 'express', 'same-day', 'none']),
             'subtotal' => $subtotal,
             'shipping_cost' => $shippingCost,

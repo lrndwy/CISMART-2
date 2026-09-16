@@ -90,26 +90,14 @@ class CheckoutPage extends Component
             [
                 'id' => 'qris',
                 'name' => 'QRIS',
-                'icon' => '🔳',
+                'icon' => 'qrcode',
                 'desc' => 'Scan QR toko, lalu unggah bukti pembayaran',
-            ],
-            [
-                'id' => 'whatsapp-order',
-                'name' => 'Pesan via WhatsApp',
-                'icon' => '💬',
-                'desc' => 'Konfirmasi pesanan langsung ke penjual',
-            ],
-            [
-                'id' => 'bank-transfer',
-                'name' => 'Transfer Bank',
-                'icon' => '🏦',
-                'desc' => 'Koordinasi pembayaran via WhatsApp',
             ],
             [
                 'id' => 'cod',
                 'name' => 'Bayar di Tempat',
-                'icon' => '💵',
-                'desc' => 'Khusus area Cilacap',
+                'icon' => 'cash',
+                'desc' => 'Bayar saat ambil di toko atau saat pesanan diantar',
             ],
         ];
     }
@@ -221,8 +209,7 @@ class CheckoutPage extends Component
                 'shipping_cost' => $this->getShippingCost(),
                 'total' => $this->getTotal(),
                 'status' => 'pending',
-                'shop_whatsapp' => $shop?->phone ?: '6288225292279',
-                'whatsapp_sent_at' => $isQris ? null : now(),
+                'shop_whatsapp' => $shop?->phone,
             ]);
 
             if ($isQris && $shop?->hasQris()) {
@@ -256,18 +243,13 @@ class CheckoutPage extends Component
             session()->put('cart', $cart);
             session()->forget('checkout_items');
 
-            if ($isQris) {
-                $this->dispatch('cart-updated');
+            $this->dispatch('cart-updated');
 
+            if ($isQris) {
                 return redirect()->route('orders.pay', $order);
             }
 
-            $message = $this->generateWhatsAppMessage($order);
-            $whatsappUrl = 'https://wa.me/6288225292279?text='.urlencode($message);
-            $this->dispatch('open-whatsapp', ['url' => $whatsappUrl]);
-
             $this->step = 'success';
-            $this->dispatch('cart-updated');
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('notify', [
@@ -277,70 +259,6 @@ class CheckoutPage extends Component
         } finally {
             $this->loading = false;
         }
-    }
-
-    protected function generateWhatsAppMessage($order = null)
-    {
-        $itemsList = '';
-        foreach ($this->checkoutItems as $item) {
-            $itemsList .= "• {$item['name']}\n";
-            $itemsList .= "  Qty: {$item['quantity']} x Rp ".number_format($item['price'], 0, ',', '.')."\n";
-            $itemsList .= '  Subtotal: Rp '.number_format($item['price'] * $item['quantity'], 0, ',', '.')."\n";
-            $itemsList .= "  Toko: {$item['shop_name']}\n\n";
-        }
-
-        $shippingInfo = '';
-        $shippingCost = $this->getShippingCost();
-        $selectedShipping = collect($this->shippingOptions)->firstWhere('id', $this->shippingMethod);
-        $shippingName = $selectedShipping['name'] ?? $this->shippingMethod;
-
-        if ($this->shippingMethod === 'delivery') {
-            $quote = $this->getDeliveryQuote();
-            $distanceLabel = $quote
-                ? DeliveryCostCalculator::formatDistance($quote['distance_meters'])
-                : '-';
-            $mapsUrl = $this->deliveryLatitude && $this->deliveryLongitude
-                ? "https://www.google.com/maps?q={$this->deliveryLatitude},{$this->deliveryLongitude}"
-                : null;
-            $shippingInfo = "🚚 *Pengiriman:*\n".
-                "{$shippingName} - Rp ".number_format($shippingCost, 0, ',', '.')."\n".
-                "Jarak: {$distanceLabel}\n".
-                ($mapsUrl ? "Lokasi: {$mapsUrl}\n\n" : "\n");
-        } elseif ($this->shippingMethod === 'pickup') {
-            $shippingInfo = "🚚 *Pengiriman:*\n{$shippingName}\n\n";
-        }
-
-        $paymentName = collect($this->paymentOptions)->firstWhere('id', $this->paymentMethod)['name'] ?? '';
-
-        $orderNumber = $order ? $order->order_number : 'Menunggu konfirmasi';
-
-        $message = "🛒 *PESANAN BARU DARI CISMART*\n\n".
-            "📋 *Nomor Pesanan:* {$orderNumber}\n\n".
-            "👤 *Data Pembeli:*\n".
-            "Nama: {$this->name}\n".
-            "Telepon: {$this->phone}\n".
-            'Email: '.(Auth::user()->email ?? '-')."\n\n".
-            "📍 *Alamat Pengiriman:*\n".
-            "{$this->address}\n".
-            "{$this->city} {$this->postalCode}\n".
-            ($this->notes ? "Catatan: {$this->notes}\n" : '')."\n".
-            "🛍️ *Detail Pesanan:*\n".
-            $itemsList.
-            $shippingInfo.
-            "💰 *Ringkasan Pembayaran:*\n".
-            'Subtotal: Rp '.number_format($this->getSubtotal(), 0, ',', '.')."\n";
-
-        if ($shippingCost > 0) {
-            $message .= 'Ongkir: Rp '.number_format($shippingCost, 0, ',', '.')."\n";
-        }
-
-        $message .= '*TOTAL: Rp '.number_format($this->getTotal(), 0, ',', '.')."*\n\n".
-            "💳 *Metode Pembayaran:*\n".
-            "{$paymentName}\n\n".
-            "---\n".
-            'Mohon konfirmasi pesanan ini dan informasi pembayaran selanjutnya. Terima kasih! 🙏';
-
-        return $message;
     }
 
     public function getSubtotal()
@@ -398,7 +316,7 @@ class CheckoutPage extends Component
                 'id' => 'pickup',
                 'name' => 'Ambil di toko',
                 'desc' => 'Tanpa ongkir, ambil pesanan langsung di toko',
-                'icon' => '🏪',
+                'icon' => 'store',
             ],
         ];
 
@@ -409,7 +327,7 @@ class CheckoutPage extends Component
                 'name' => 'Kirim ke lokasi',
                 'desc' => 'Ongkir Rp '.number_format((int) $shop->delivery_rate, 0, ',', '.').
                     ' per '.number_format((int) $shop->delivery_unit_meters, 0, ',', '.').' meter',
-                'icon' => '🛵',
+                'icon' => 'truck',
             ];
         }
 
@@ -455,13 +373,6 @@ class CheckoutPage extends Component
         } elseif ($this->step === 'review') {
             $this->step = 'payment';
         }
-    }
-
-    public function openWhatsAppAgain()
-    {
-        $message = $this->generateWhatsAppMessage();
-        $whatsappUrl = 'https://wa.me/6288225292279?text='.urlencode($message);
-        $this->dispatch('open-whatsapp', ['url' => $whatsappUrl]);
     }
 
     public function render()

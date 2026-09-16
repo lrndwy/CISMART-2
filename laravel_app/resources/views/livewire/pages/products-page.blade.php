@@ -1,9 +1,27 @@
-<div class="min-h-screen bg-gray-50 py-8">
+@php
+    $activeFilters = 0;
+    if ($category !== 'all') {
+        $activeFilters++;
+    }
+    if ($minPrice || $maxPrice) {
+        $activeFilters++;
+    }
+    if ($location !== 'all') {
+        $activeFilters++;
+    }
+    if ($minRating) {
+        $activeFilters++;
+    }
+    $wireTargets = 'search,category,sortBy,minPrice,maxPrice,location,minRating,setPriceRange,clearFilters';
+@endphp
+
+<div class="bg-stone-50 py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Produk UMKM Cilacap</h1>
-            <p class="text-gray-600">
+        {{-- Header --}}
+        <div class="pb-6">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-green-700">Katalog</p>
+            <h1 class="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-stone-900">Produk UMKM Cilacap</h1>
+            <p class="text-stone-500 mt-2">
                 @if ($search)
                     Hasil pencarian "{{ $search }}"
                 @else
@@ -12,430 +30,119 @@
             </p>
         </div>
 
-        <!-- Search Bar -->
-        <div class="mb-6">
-            <div class="relative max-w-md">
+        {{-- Search + sort (desktop) --}}
+        <div class="hidden lg:flex items-center gap-4 mb-8">
+            <div class="relative flex-1 max-w-md">
+                <svg class="h-4 w-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none"
+                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
                 <input type="text" wire:model.live.debounce.300ms="search"
                     placeholder="Cari produk, toko, atau kategori..."
-                    class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+                    class="w-full rounded-lg border border-stone-300 pl-10 pr-10 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-transparent focus:ring-2 focus:ring-green-700" />
                 @if ($search)
                     <button wire:click="clearSearch"
-                        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        ✕
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 @endif
             </div>
+            <x-select-dropdown prop="sortBy" label="Urutkan" class="w-56 shrink-0"
+                :options="collect($sortOptions)->map(fn ($o) => ['value' => $o['value'], 'label' => $o['label']])->all()" />
         </div>
 
-        <!-- Mobile Filter Section (Above Products) -->
-        <div class="lg:hidden mb-6">
-            <!-- Filter Toggle Button -->
+        {{-- Mobile controls --}}
+        <div class="lg:hidden mb-6 space-y-4">
+            <div class="relative">
+                <svg class="h-4 w-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none"
+                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <input type="text" wire:model.live.debounce.300ms="search"
+                    placeholder="Cari produk, toko, atau kategori..."
+                    class="w-full rounded-lg border border-stone-300 pl-10 pr-10 py-2.5 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-transparent focus:ring-2 focus:ring-green-700" />
+                @if ($search)
+                    <button wire:click="clearSearch"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                @endif
+            </div>
+            <div class="grid grid-cols-2 gap-3">
             <button wire:click="toggleMobileFilter"
-                class="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mb-4">
-                <div class="flex items-center gap-2">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
-                        </path>
+                class="w-full flex items-center justify-between px-4 py-3 bg-white border border-stone-200 rounded-lg hover:border-green-700 transition-colors">
+                <span class="flex items-center gap-2 font-medium text-stone-900 text-sm">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.587a2.25 2.25 0 00-.659-1.591L3.659 7.39A2.25 2.25 0 013 5.799V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
                     </svg>
-                    <span class="font-medium text-gray-900">Filter & Urutkan</span>
-                </div>
-                <svg class="h-5 w-5 transition-transform {{ $mobileFilterOpen ? 'rotate-180' : '' }}" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                    </path>
+                    Filter
+                    @if ($activeFilters > 0)
+                        <span class="bg-green-700 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5">{{ $activeFilters }}</span>
+                    @endif
+                </span>
+                <svg class="h-4 w-4 text-stone-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
             </button>
-
-            <!-- Filter Panel -->
-            @if ($mobileFilterOpen)
-                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-                    <div class="space-y-4">
-                        <!-- Category Filter -->
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-2 text-sm">Kategori</h4>
-                            <div class="space-y-2 max-h-40 overflow-y-auto">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input name="category" type="radio" wire:model.live="category" value="all"
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Kategori</span>
-                                </label>
-                                @foreach ($categories as $cat)
-                                    <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                        <input name="category" type="radio" wire:model.live="category"
-                                            value="{{ $cat->id }}" class="text-green-600 focus:ring-green-500" />
-                                        <span class="ml-2 text-sm text-gray-700">
-                                            {{ $cat->name }}
-                                            <span class="text-gray-500 text-xs">({{ $cat->products_count }})</span>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Sort Dropdown -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h4 class="font-medium text-gray-900 mb-2 text-sm">Urutkan</h4>
-                            <select wire:model.live="sortBy"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
-                                @foreach ($sortOptions as $option)
-                                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Price Range Filter -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h4 class="font-medium text-gray-900 mb-2 text-sm">Rentang Harga</h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('', '')"
-                                        {{ $minPrice === '' && $maxPrice === '' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Harga</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('', '50000')"
-                                        {{ $minPrice === '' && $maxPrice === '50000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Di bawah Rp 50.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('50000', '100000')"
-                                        {{ $minPrice === '50000' && $maxPrice === '100000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Rp 50.000 - Rp 100.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('100000', '500000')"
-                                        {{ $minPrice === '100000' && $maxPrice === '500000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Rp 100.000 - Rp 500.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('500000', '')"
-                                        {{ $minPrice === '500000' && $maxPrice === '' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Di atas Rp 500.000</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Location Filter -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h4 class="font-medium text-gray-900 mb-2 text-sm">Lokasi UMKM</h4>
-                            <select wire:model.live="location"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
-                                <option value="all">Semua Lokasi</option>
-                                @foreach ($locations as $loc)
-                                    <option value="{{ $loc }}">{{ $loc }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Rating Filter -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <h4 class="font-medium text-gray-900 mb-2 text-sm">Rating Minimum</h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:model.live="minRating" value=""
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Rating</span>
-                                </label>
-                                @foreach ([4.5, 4.0, 3.5, 3.0] as $rating)
-                                    <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                        <input type="radio" wire:model.live="minRating"
-                                            value="{{ $rating }}"
-                                            class="text-green-600 focus:ring-green-500" />
-                                        <div class="ml-2 flex items-center">
-                                            <span class="text-sm text-gray-700 mr-1">{{ $rating }}</span>
-                                            <div class="flex">
-                                                @for ($i = 0; $i < 5; $i++)
-                                                    @if ($i < $rating)
-                                                        <span class="text-xs text-yellow-400">⭐</span>
-                                                    @else
-                                                        <span class="text-xs text-gray-300">⭐</span>
-                                                    @endif
-                                                @endfor
-                                            </div>
-                                            <span class="text-sm text-gray-500 ml-1">ke atas</span>
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Active Filters & Reset -->
-                        @php
-                            $activeFilters = 0;
-                            if ($category !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minPrice || $maxPrice) {
-                                $activeFilters++;
-                            }
-                            if ($location !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minRating) {
-                                $activeFilters++;
-                            }
-                        @endphp
-
-                        @if ($activeFilters > 0)
-                            <div class="border-t border-gray-200 pt-4">
-                                <button wire:click="clearFilters"
-                                    class="w-full px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-medium text-sm transition-colors">
-                                    Reset {{ $activeFilters }} Filter
-                                </button>
-                            </div>
-                        @endif
-
-                        <!-- Close Button -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <button wire:click="closeMobileFilter"
-                                class="w-full px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-medium text-sm transition-colors">
-                                Terapkan Filter
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Info Bar -->
-            <div class="flex items-center justify-between text-sm text-gray-600 px-2">
-                <span>Menampilkan {{ $filteredProducts->count() }} dari {{ $filteredProducts->total() }} produk</span>
+            <x-select-dropdown prop="sortBy" label="Urutkan"
+                :options="collect($sortOptions)->map(fn ($o) => ['value' => $o['value'], 'label' => $o['label']])->all()" />
             </div>
         </div>
 
-        <div class="flex gap-8">
-            <!-- Desktop Sidebar Filters -->
-            <div class="hidden lg:block w-80 flex-shrink-0">
-                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Filter Produk</h3>
-                        @php
-                            $activeFilters = 0;
-                            if ($category !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minPrice || $maxPrice) {
-                                $activeFilters++;
-                            }
-                            if ($location !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minRating) {
-                                $activeFilters++;
-                            }
-                        @endphp
+        <div class="flex gap-10">
+            {{-- Sidebar desktop --}}
+            <aside class="hidden lg:block lg:w-72 flex-shrink-0">
+                <div class="sticky top-24">
+                    <div class="flex items-center justify-between pb-4">
+                        <h3 class="text-sm font-semibold text-stone-900">Filter</h3>
                         @if ($activeFilters > 0)
-                            <button wire:click="clearFilters"
-                                class="text-sm text-red-600 hover:text-red-700 flex items-center gap-1">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                                Reset
+                            <button wire:click="clearFilters" class="text-sm font-medium text-red-600 hover:text-red-700">
+                                Reset ({{ $activeFilters }})
                             </button>
                         @endif
                     </div>
-
-                    <div class="space-y-6">
-                        <!-- Category Filter -->
-                        <div>
-                            <h4 class="font-medium text-gray-900 mb-3">Kategori</h4>
-                            <div class="space-y-2 max-h-64 overflow-y-auto">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input name="category" type="radio" wire:model.live="category" value="all"
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Kategori</span>
-                                </label>
-                                @foreach ($categories as $cat)
-                                    <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                        <input name="category" type="radio" wire:model.live="category"
-                                            value="{{ $cat->id }}"
-                                            class="text-green-600 focus:ring-green-500" />
-                                        <span class="ml-2 text-sm text-gray-700">
-                                            {{ $cat->name }}
-                                            <span class="text-gray-500">({{ $cat->products_count }})</span>
-                                        </span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Price Range Filter -->
-                        <div class="border-t border-gray-200 pt-6">
-                            <h4 class="font-medium text-gray-900 mb-3">Rentang Harga</h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('', '')"
-                                        {{ $minPrice === '' && $maxPrice === '' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Harga</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('', '50000')"
-                                        {{ $minPrice === '' && $maxPrice === '50000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Di bawah Rp 50.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('50000', '100000')"
-                                        {{ $minPrice === '50000' && $maxPrice === '100000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Rp 50.000 - Rp 100.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('100000', '500000')"
-                                        {{ $minPrice === '100000' && $maxPrice === '500000' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Rp 100.000 - Rp 500.000</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:click="setPriceRange('500000', '')"
-                                        {{ $minPrice === '500000' && $maxPrice === '' ? 'checked' : '' }}
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Di atas Rp 500.000</span>
-                                </label>
-                            </div>
-
-                            <!-- Custom Price Range -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <h5 class="text-sm font-medium text-gray-900 mb-2">Harga Kustom</h5>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="number" wire:model.live.debounce.500ms="minPrice" placeholder="Min"
-                                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-                                    <input type="number" wire:model.live.debounce.500ms="maxPrice" placeholder="Max"
-                                        class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Location Filter -->
-                        <div class="border-t border-gray-200 pt-6">
-                            <h4 class="font-medium text-gray-900 mb-3">Lokasi UMKM</h4>
-                            <select wire:model.live="location"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
-                                <option value="all">Semua Lokasi</option>
-                                @foreach ($locations as $loc)
-                                    <option value="{{ $loc }}">{{ $loc }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Rating Filter -->
-                        <div class="border-t border-gray-200 pt-6">
-                            <h4 class="font-medium text-gray-900 mb-3">Rating Minimum</h4>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                    <input type="radio" wire:model.live="minRating" value=""
-                                        class="text-green-600 focus:ring-green-500" />
-                                    <span class="ml-2 text-sm text-gray-700">Semua Rating</span>
-                                </label>
-                                @foreach ([4.5, 4.0, 3.5, 3.0] as $rating)
-                                    <label class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                        <input type="radio" wire:model.live="minRating"
-                                            value="{{ $rating }}"
-                                            class="text-green-600 focus:ring-green-500" />
-                                        <div class="ml-2 flex items-center">
-                                            <span class="text-sm text-gray-700 mr-1">{{ $rating }}</span>
-                                            <div class="flex">
-                                                @for ($i = 0; $i < 5; $i++)
-                                                    @if ($i < $rating)
-                                                        <span class="text-xs text-yellow-400">⭐</span>
-                                                    @else
-                                                        <span class="text-xs text-gray-300">⭐</span>
-                                                    @endif
-                                                @endfor
-                                            </div>
-                                            <span class="text-sm text-gray-500 ml-1">ke atas</span>
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
+                    @include('livewire.pages.partials.product-filters')
                 </div>
-            </div>
+            </aside>
 
-            <!-- Products Container -->
-            <div class="flex-1">
-                <!-- Desktop Top Controls -->
-                <div class="hidden lg:flex items-center justify-between gap-4 mb-6">
-                    <div class="flex items-center gap-4">
-                        @php
-                            $activeFilters = 0;
-                            if ($category !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minPrice || $maxPrice) {
-                                $activeFilters++;
-                            }
-                            if ($location !== 'all') {
-                                $activeFilters++;
-                            }
-                            if ($minRating) {
-                                $activeFilters++;
-                            }
-                        @endphp
-
-                        @if ($activeFilters > 0)
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-600">{{ $activeFilters }} filter aktif</span>
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="flex items-center gap-4">
-                        <span class="text-sm text-gray-600">
-                            Menampilkan {{ $filteredProducts->count() }} dari {{ $filteredProducts->total() }} produk
-                        </span>
-                        <select wire:model.live="sortBy"
-                            class="px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
-                            @foreach ($sortOptions as $option)
-                                <option value="{{ $option['value'] }}">
-                                    Urutkan: {{ $option['label'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+            {{-- Results --}}
+            <div class="flex-1 min-w-0">
+                {{-- Toolbar --}}
+                <div class="hidden lg:flex items-center justify-between text-sm text-stone-500 border-t border-stone-200 py-3 mb-5">
+                    <span>Menampilkan {{ $filteredProducts->count() }} dari {{ $filteredProducts->total() }} produk</span>
+                    @if ($activeFilters > 0)
+                        <span><span class="text-stone-900 font-medium">{{ $activeFilters }} filter aktif</span></span>
+                    @endif
                 </div>
 
-                <!-- Products Grid -->
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" wire:key="products-grid">
+                <div wire:loading wire:target="{{ $wireTargets }}" class="flex items-center gap-2 text-sm text-stone-500 mb-3">
+                    <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-stone-300 border-t-green-700"></span>
+                    Memuat ulang…
+                </div>
+
+                {{-- Grid --}}
+                <div class="grid grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6" wire:key="products-grid"
+                    wire:loading.class="opacity-50 transition-opacity duration-200" wire:target="{{ $wireTargets }}">
                     @forelse($filteredProducts as $index => $product)
-                        <div wire:key="product-{{ $product->id }}-{{ $index }}">
+                        <div wire:key="product-{{ $product->id }}-{{ $index }}" class="reveal" style="--i: {{ $loop->index % 8 }}">
                             @include('components.product-card-static', ['product' => $product])
                         </div>
                     @empty
-                        <div class="col-span-full text-center py-12">
-                            <div class="text-gray-400 text-6xl mb-4">🔍</div>
-                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                                Produk tidak ditemukan
-                            </h3>
-                            <p class="text-gray-600 mb-4">
+                        <div class="col-span-full text-center py-16">
+                            <svg class="h-12 w-12 text-stone-300 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                            <h3 class="text-lg font-semibold text-stone-900">Produk tidak ditemukan</h3>
+                            <p class="text-stone-500 text-sm mt-1 mb-5">
                                 Coba ubah filter pencarian atau kata kunci yang berbeda
                             </p>
-                            @php
-                                $activeFilters = 0;
-                                if ($category !== 'all') {
-                                    $activeFilters++;
-                                }
-                                if ($minPrice || $maxPrice) {
-                                    $activeFilters++;
-                                }
-                                if ($location !== 'all') {
-                                    $activeFilters++;
-                                }
-                                if ($minRating) {
-                                    $activeFilters++;
-                                }
-                            @endphp
                             @if ($activeFilters > 0)
                                 <button wire:click="clearFilters"
-                                    class="text-green-600 hover:text-green-700 font-medium">
+                                    class="rounded-lg bg-green-700 text-white text-sm font-medium px-5 py-2.5 hover:bg-green-800 active:scale-[0.98] transition">
                                     Reset Semua Filter
                                 </button>
                             @endif
@@ -443,7 +150,6 @@
                     @endforelse
                 </div>
 
-                <!-- Pagination -->
                 @if ($filteredProducts->hasPages())
                     <div class="mt-8">
                         {{ $filteredProducts->links() }}
@@ -452,4 +158,31 @@
             </div>
         </div>
     </div>
+
+    {{-- Bottom sheet mobile --}}
+    @if ($mobileFilterOpen)
+        <div class="fixed inset-0 z-50 lg:hidden">
+            <div class="absolute inset-0 bg-stone-900/40" wire:click="closeMobileFilter"></div>
+            <div class="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto bg-white rounded-t-2xl p-5 pb-8 reveal">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold text-stone-900">Filter</h3>
+                    <button wire:click="closeMobileFilter" class="p-2 text-stone-400 hover:text-stone-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                @include('livewire.pages.partials.product-filters')
+                <div class="sticky bottom-0 -mx-5 px-5 pt-4 pb-1 bg-white">
+                    <button wire:click="closeMobileFilter"
+                        class="w-full rounded-lg bg-green-700 text-white py-3 font-medium text-sm hover:bg-green-800 active:scale-[0.98] transition">
+                        Terapkan
+                        @if ($activeFilters > 0)
+                            ({{ $activeFilters }})
+                        @endif
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

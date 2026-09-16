@@ -8,6 +8,9 @@ use App\Livewire\Pages\OrderPaymentPage;
 use App\Livewire\Pages\OrdersPage;
 use App\Livewire\Pages\ProductDetailPage;
 use App\Livewire\Pages\ProductsPage;
+use App\Livewire\Pages\ProfilePage;
+use App\Livewire\Pages\RegisterPage;
+use App\Livewire\Pages\RegisterUmkmPage;
 use App\Livewire\Pages\ShopDetailPage;
 use App\Livewire\Pages\ShopsPage;
 use Illuminate\Http\Request;
@@ -16,6 +19,8 @@ use Illuminate\Support\Facades\URL;
 
 Route::get('/', HomePage::class)->name('home');
 Route::get('/login', LoginPage::class)->name('login');
+Route::get('/register', RegisterPage::class)->name('register');
+Route::get('/register/umkm', RegisterUmkmPage::class)->name('register.umkm');
 Route::get('/products', ProductsPage::class)->name('products.index');
 
 // Use :slug instead of implicit binding to avoid Livewire trying to resolve by ID
@@ -26,6 +31,7 @@ Route::get('/cart', CartPage::class)->name('cart.index');
 Route::get('/checkout', CheckoutPage::class)->name('checkout.index');
 Route::get('/orders', OrdersPage::class)->name('orders.index');
 Route::get('/orders/{order}/pay', OrderPaymentPage::class)->name('orders.pay');
+Route::get('/profile', ProfilePage::class)->name('profile');
 
 Route::redirect('/dashboard', '/admin')->name('dashboard');
 

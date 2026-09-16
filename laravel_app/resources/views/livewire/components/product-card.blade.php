@@ -1,102 +1,74 @@
 <!-- resources/views/livewire/components/product-card.blade.php -->
-<div
-    class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
-    <div class="relative overflow-hidden rounded-t-lg">
+<div class="group overflow-hidden rounded-xl border border-stone-200/70 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.05)] transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(28,25,23,0.18)]">
+    <div class="relative overflow-hidden">
         <img src="{{ $this->imageUrl }}" alt="{{ $product->name }}"
-            class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
-        <div
-            class="absolute inset-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
-            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
-                <button wire:click="viewProduct"
-                    class="bg-white text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                    title="Lihat Detail Produk">
-                    <flux:icon.eye class="h-4 w-4" />
-                </button>
-                <button wire:click="viewShop"
-                    class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                    title="Lihat Toko">
-                    <flux:icon.building-storefront class="h-4 w-4" />
-                </button>
-                <button wire:click="addToCart"
-                    class="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors"
-                    title="Tambah ke Keranjang" wire:loading.attr="disabled">
-                    <flux:icon.shopping-cart class="h-4 w-4" />
-                </button>
-            </div>
+            class="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]">
+
+        {{-- Overlay aksi hover (desktop only) --}}
+        <div class="absolute top-2 right-2 hidden sm:flex gap-2 opacity-0 group-hover:opacity-100 transition">
+            <button wire:click="viewProduct" title="Lihat Detail Produk"
+                class="bg-white/90 text-stone-700 hover:text-green-700 rounded-lg p-2">
+                <flux:icon.eye class="h-4 w-4" />
+            </button>
+            <button wire:click="addToCart" title="Tambah ke Keranjang" wire:loading.attr="disabled"
+                class="bg-white/90 text-stone-700 hover:text-green-700 rounded-lg p-2">
+                <flux:icon.shopping-cart class="h-4 w-4" />
+            </button>
         </div>
 
-        {{-- Stock Badge --}}
-        @if ($product->stock > 0 && $product->stock < 10)
-            <div class="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium">
-                Stok: {{ $product->stock }}
-            </div>
-        @elseif($product->stock === 0)
-            <div class="absolute top-2 right-2 bg-gray-500 text-white px-2 py-1 rounded text-xs font-medium">
-                Habis
-            </div>
-        @endif
-
-        @if ($product->is_featured)
-            <div class="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-medium">
-                ⭐ Featured
-            </div>
-        @endif
+        <div class="absolute top-2 left-2 flex gap-1.5">
+            @if ($product->is_featured)
+                <span class="bg-green-700/90 text-white text-[11px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Unggulan
+                </span>
+            @endif
+            @if ($product->stock > 0 && $product->stock < 10)
+                <span class="bg-amber-500 text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
+                    Stok: {{ $product->stock }}
+                </span>
+            @elseif($product->stock === 0)
+                <span class="bg-stone-500 text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
+                    Habis
+                </span>
+            @endif
+        </div>
     </div>
 
-    <div class="p-4">
+    <div class="p-3 sm:p-4">
         <h3 wire:click="viewProduct"
-            class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-green-600 transition-colors cursor-pointer"
+            class="text-[13px] sm:text-sm font-semibold leading-snug text-stone-900 line-clamp-2 group-hover:text-green-700 transition-colors cursor-pointer"
             title="Klik untuk melihat detail produk">
             {{ $product->name }}
         </h3>
 
-        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-            {{ $product->description }}
+        <div class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs text-stone-500">
+            <svg class="h-3.5 w-3.5 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span>{{ $product->rating ?? 4.5 }}</span>
+            <span class="text-stone-300">·</span>
+            <span>{{ $product->sold ?? 0 }} terjual</span>
+        </div>
+
+        <p class="mt-2 text-sm sm:text-[15px] font-bold text-stone-900">
+            <span class="text-xs font-medium text-stone-500">Rp</span> {{ number_format($product->price, 0, ',', '.') }}
         </p>
 
-        <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-1">
-                <flux:icon.star class="h-4 w-4 text-yellow-400 fill-current" />
-                <span class="text-sm text-gray-600">4.5</span>
-                <span class="text-gray-400">•</span>
-                <span class="text-sm text-gray-500">Terjual</span>
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between mb-3">
-            <div>
-                <span class="text-xl font-bold text-green-600">
-                    Rp {{ number_format($product->price, 0, ',', '.') }}
+        <div class="mt-3 space-y-2">
+            <button wire:click="addToCart" wire:loading.attr="disabled" wire:loading.class="opacity-50 cursor-not-allowed"
+                @disabled($product->stock === 0)
+                class="w-full rounded-lg text-[13px] sm:text-sm font-medium py-2.5 transition disabled:cursor-not-allowed {{ $product->stock === 0
+                    ? 'bg-stone-200 text-stone-400'
+                    : 'bg-green-700 text-white hover:bg-green-800 active:scale-[0.98]' }}">
+                <span wire:loading.remove wire:target="addToCart">
+                    {{ $product->stock === 0 ? 'Stok Habis' : ($addedToCart ? 'Masuk keranjang' : 'Tambah ke Keranjang') }}
                 </span>
-            </div>
-        </div>
-
-        <button wire:click="viewShop"
-            class="text-sm text-gray-600 hover:text-green-600 transition-colors mb-3 flex items-center gap-1 cursor-pointer"
-            title="Klik untuk melihat toko">
-            <flux:icon.building-storefront class="h-3 w-3" />
-            {{ $product->shop->name }}
-        </button>
-
-        <button wire:click="addToCart" wire:loading.attr="disabled" wire:loading.class="opacity-50 cursor-not-allowed"
-            @disabled($product->stock === 0)
-            class="{{ $product->stock === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700 transform hover:scale-105' }}
-                w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 mb-2">
-            <span wire:loading.remove wire:target="addToCart">
-                {{ $product->stock === 0 ? 'Stok Habis' : ($addedToCart ? 'Ditambahkan! ✓' : 'Tambah ke Keranjang') }}
-            </span>
-            <span wire:loading wire:target="addToCart">
-                Menambahkan...
-            </span>
-        </button>
-
-        @if ($product->stock > 0)
-            <button wire:click="orderViaWhatsApp"
-                class="w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 bg-green-500 text-white hover:bg-green-600 transform hover:scale-105 flex items-center justify-center gap-2">
-                💬 Pesan via WhatsApp
+                <span wire:loading wire:target="addToCart">Menambahkan…</span>
             </button>
-        @endif
+
+        </div>
     </div>
 </div>

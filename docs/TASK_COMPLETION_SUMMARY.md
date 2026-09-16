@@ -72,7 +72,7 @@ TextColumn::make('cluster_description')
 ### ✅ Verified:
 
 ```bash
-php test_cluster_description.php
+php scripts/test_cluster_description.php
 ```
 
 Output:
@@ -152,12 +152,12 @@ Steps:
 - Execute training via Python
 - Show training results
 
-#### 2. `deploy_and_train.sh`
+#### 2. `scripts/deploy_and_train.sh`
 
 Complete deployment + training:
 
 ```bash
-bash deploy_and_train.sh
+bash scripts/deploy_and_train.sh
 ```
 
 Steps:
@@ -198,7 +198,7 @@ Created:
 
 1. ✅ `DEPLOYMENT_GUIDE.md` - Complete deployment guide
 2. ✅ `ml_service/train_in_docker.sh` - Docker training script
-3. ✅ `deploy_and_train.sh` - Full deployment script
+3. ✅ `scripts/deploy_and_train.sh` - Full deployment script
 
 Updated:
 
@@ -213,7 +213,7 @@ Updated:
 
 ```bash
 cd laravel_app
-php test_cluster_description.php
+php scripts/test_cluster_description.php
 ```
 
 **Result:** PASSED ✅
@@ -226,7 +226,7 @@ php test_cluster_description.php
 
 ```bash
 cd laravel_app
-php test_filament_create_flow.php
+php scripts/test_filament_create_flow.php
 ```
 
 **Result:** PASSED ✅
@@ -260,9 +260,9 @@ curl http://localhost:5000/api/model-info
 2. ✅ `app/Filament/Resources/MlPredictionResource.php` - Added column
 3. ✅ `.github/workflows/docker-vps.yml` - Updated CI/CD workflow
 4. ✅ `ml_service/train_in_docker.sh` - Docker training script
-5. ✅ `deploy_and_train.sh` - Deployment automation script
+5. ✅ `scripts/deploy_and_train.sh` - Deployment automation script
 6. ✅ `ml_service/train_with_real_data.py` - Real data training script
-7. ✅ `laravel_app/test_cluster_description.php` - Test script
+7. ✅ `laravel_app/scripts/test_cluster_description.php` - Test script
 
 ### Documentation:
 
@@ -308,7 +308,7 @@ GitHub Actions akan otomatis deploy ke VPS ✅
 ssh user@vps-ip
 cd /var/www/cismart
 git pull origin master
-bash deploy_and_train.sh
+bash scripts/deploy_and_train.sh
 ```
 
 ### 3. Training Production Model (OPTIONAL)

@@ -1,6 +1,8 @@
 # PowerShell Script untuk manual training ML model di production
 # Gunakan jika automatic training di CI/CD gagal
 
+Set-Location (Split-Path -Parent $PSScriptRoot)
+
 Write-Host "🤖 Manual ML Model Training for Production" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 

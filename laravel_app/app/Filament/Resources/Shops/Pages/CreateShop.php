@@ -45,7 +45,7 @@ class CreateShop extends CreateRecord
 
         if ($user && $user->isSeller() && ! $user->isAdmin()) {
             $data['user_id'] = $user->id;
-            $data['status'] = 'approved';
+            $data['status'] = $user->sellerApplication?->isApproved() ? 'approved' : 'pending';
         }
 
         try {

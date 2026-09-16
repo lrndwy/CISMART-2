@@ -4,5 +4,34 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes menu-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+.menu-in {
+    animation: menu-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: top right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu-in { animation: none; }
+}
+
+.reveal {
+    animation: fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; }
 }

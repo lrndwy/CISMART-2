@@ -1,5 +1,7 @@
 # PowerShell script untuk debug ML service container yang gagal
 
+Set-Location (Split-Path -Parent $PSScriptRoot)
+
 Write-Host "🔍 Debugging ML Service Container" -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 

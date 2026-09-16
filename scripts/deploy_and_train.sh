@@ -3,6 +3,7 @@
 # Untuk dijalankan di VPS setelah git pull
 
 set -e
+cd "$(dirname "$0")/.."
 
 echo "🚀 CISMART Deployment & ML Training"
 echo "===================================="

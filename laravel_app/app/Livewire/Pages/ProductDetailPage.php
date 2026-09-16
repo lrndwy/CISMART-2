@@ -3,6 +3,7 @@
 namespace App\Livewire\Pages;
 
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
@@ -16,13 +17,17 @@ class ProductDetailPage extends Component
 
     public bool $showReviews = false;
 
+    public bool $isFavorited = false;
+
     public function mount($slug)
     {
         // Always query by slug since route parameter is named {slug}
         $this->product = Product::with('shop', 'category')
-            ->where('status', 'published')
+            ->published()
             ->where('slug', $slug)
             ->firstOrFail();
+
+        $this->isFavorited = $this->product->isFavoritedBy(Auth::user());
     }
 
     public function incrementQuantity()
@@ -83,40 +88,34 @@ class ProductDetailPage extends Component
         $this->dispatch('notify', type: 'success', message: "{$this->quantity} {$this->product->name} berhasil ditambahkan ke keranjang!");
     }
 
-    public function getWhatsAppMessage()
+    public function toggleFavorite()
     {
-        $shopLocation = $this->product->shop->address ?? 'Tidak tersedia';
-        $discountedPrice = $this->product->discount
-            ? floor($this->product->price * (1 - $this->product->discount / 100))
-            : $this->product->price;
+        $user = Auth::user();
 
-        return urlencode(
-            "🛍️ *MINAT PRODUK DARI CISMART*\n\n".
-                "Halo, saya tertarik dengan produk:\n\n".
-                "📦 *{$this->product->name}*\n".
-                '💰 Harga: Rp '.number_format($discountedPrice, 0, ',', '.')."\n".
-                "📊 Jumlah: {$this->quantity} pcs\n".
-                '💵 Total: Rp '.number_format($discountedPrice * $this->quantity, 0, ',', '.')."\n".
-                "🏪 Toko: {$this->product->shop->name}\n".
-                "📍 Lokasi: {$shopLocation}\n\n".
-                "Apakah produk ini masih tersedia? Mohon informasi lebih lanjut untuk pemesanan.\n\n".
-                'Terima kasih! 🙏'
-        );
-    }
-
-    public function orderViaWhatsApp()
-    {
-        if ($this->product->stock === 0) {
-            $this->dispatch('notify', type: 'error', message: 'Stok habis');
+        if (! $user) {
+            $this->redirect(route('login', ['redirect' => route('products.show', $this->product->slug)]));
 
             return;
         }
 
-        $whatsappNumber = $this->product->shop->phone ?? '6288225292279';
-        $message = $this->getWhatsAppMessage();
-        $whatsappUrl = "https://wa.me/{$whatsappNumber}?text=($message)";
+        $existing = $this->product->favorites()->where('user_id', $user->id)->first();
 
-        return redirect()->to($whatsappUrl);
+        if ($existing) {
+            $existing->delete();
+            $this->isFavorited = false;
+            $this->dispatch('notify', ['message' => 'Dihapus dari favorit.', 'type' => 'info']);
+
+            return;
+        }
+
+        $this->product->favorites()->create(['user_id' => $user->id]);
+        $this->isFavorited = true;
+        $this->dispatch('notify', ['message' => 'Ditambahkan ke favorit.', 'type' => 'success']);
+    }
+
+    public function getFavoriteCountProperty(): int
+    {
+        return $this->product->favorites()->count();
     }
 
     public function getProductImagesProperty()
@@ -165,38 +164,8 @@ class ProductDetailPage extends Component
     {
         return view('livewire.pages.product-detail-page', [
             'productImages' => $this->productImages,
-            'mockReviews' => $this->getMockReviews(),
             'averageRating' => $this->averageRating,
+            'favoriteCount' => $this->favoriteCount,
         ]);
-    }
-
-    private function getMockReviews()
-    {
-        return [
-            [
-                'id' => '1',
-                'user' => 'Sari Wijaya',
-                'rating' => 5,
-                'comment' => 'Produk sangat bagus, kualitas sesuai dengan harga. Pengiriman cepat dan packaging rapi.',
-                'date' => '2024-01-15',
-                'helpful' => 12,
-            ],
-            [
-                'id' => '2',
-                'user' => 'Budi Santoso',
-                'rating' => 4,
-                'comment' => 'Bagus, tapi warnanya sedikit berbeda dari foto. Overall puas dengan pembelian ini.',
-                'date' => '2024-01-10',
-                'helpful' => 8,
-            ],
-            [
-                'id' => '3',
-                'user' => 'Maya Indah',
-                'rating' => 5,
-                'comment' => 'Sudah beli berkali-kali, selalu puas. Kualitas konsisten dan pelayanan ramah.',
-                'date' => '2024-01-05',
-                'helpful' => 15,
-            ],
-        ];
     }
 }

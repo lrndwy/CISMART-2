@@ -1,174 +1,227 @@
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex items-center gap-4 mb-8">
-            <a href="{{ route('products.index') }}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </a>
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Detail Produk</h1>
-                <p class="text-gray-600">Informasi lengkap produk UMKM</p>
-            </div>
-        </div>
+@php
+    $finalPrice = $product->discount
+        ? floor($product->price * (1 - $product->discount / 100))
+        : $product->price;
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Product Images -->
-            <div class="space-y-4">
-                <div class="aspect-square bg-white rounded-lg overflow-hidden shadow-md">
-                    <img src="{{ $productImages[$selectedImage] ?? asset('images/placeholder.png') }}"
-                        alt="{{ $product->name }}" class="w-full h-full object-cover" />
-                </div>
-                <div class="flex gap-2 overflow-x-auto">
-                    @forelse($productImages as $index => $image)
-                        <button wire:click="selectImage({{ $index }})"
-                            class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors {{ $selectedImage === $index ? 'border-green-500' : 'border-gray-200' }}">
-                            <img src="{{ $image }}" alt="{{ $product->name }} {{ $index + 1 }}"
-                                class="w-full h-full object-cover" />
-                        </button>
-                    @empty
-                        <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-                            Tidak ada gambar
-                        </div>
-                    @endforelse
-                </div>
-            </div>
+    $shopLogo = $product->shop->logo
+        ? (filter_var($product->shop->logo, FILTER_VALIDATE_URL)
+            ? $product->shop->logo
+            : Storage::url($product->shop->logo))
+        : 'https://picsum.photos/seed/cismart-l'.$product->shop->id.'/240/240';
 
-            <!-- Product Info -->
-            <div class="space-y-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $product->name }}</h1>
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="flex items-center gap-1">
-                            <svg class="h-5 w-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                </path>
-                            </svg>
-                            <span class="font-medium">{{ $product->rating ?? 0 }}</span>
-                            <span class="text-gray-500">({{ count($mockReviews) }} ulasan)</span>
-                        </div>
-                        <span class="text-gray-400">•</span>
-                        <span class="text-gray-600">{{ $product->sold ?? 0 }} terjual</span>
-                    </div>
+    $mainImage = $productImages[$selectedImage] ?? asset('images/placeholder.png');
+@endphp
 
-                    <div class="mb-6">
+<div class="bg-stone-50 pb-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+
+        {{-- Breadcrumb --}}
+        <nav class="flex items-center gap-2 text-sm text-stone-500" aria-label="Breadcrumb">
+            <a href="{{ route('home') }}" class="hover:text-green-700 transition-colors">Beranda</a>
+            <svg class="h-3.5 w-3.5 text-stone-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+            <a href="{{ route('products.index') }}" class="hover:text-green-700 transition-colors">Produk</a>
+            <svg class="h-3.5 w-3.5 text-stone-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+            <span class="truncate text-stone-700 font-medium">{{ $product->name }}</span>
+        </nav>
+
+        {{-- Asymmetric split: gallery (7) / buy box (5) --}}
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+
+            {{-- Gallery --}}
+            <div class="lg:col-span-7 reveal" style="--i: 0">
+                <div class="relative overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-[0_1px_2px_rgba(28,25,23,0.05)]">
+                    <img src="{{ $mainImage }}" alt="{{ $product->name }}" class="aspect-square w-full object-cover" />
+
+                    <div class="absolute top-4 left-4 flex flex-wrap gap-2">
                         @if ($product->discount)
-                            <div class="flex items-center gap-3">
-                                <span class="text-3xl font-bold text-green-600">
-                                    Rp
-                                    {{ number_format(floor($product->price * (1 - $product->discount / 100)), 0, ',', '.') }}
-                                </span>
-                                <div class="flex flex-col">
-                                    <span class="text-lg text-gray-400 line-through">
-                                        Rp {{ number_format($product->price, 0, ',', '.') }}
-                                    </span>
-                                    <span class="bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
-                                        -{{ $product->discount }}%
-                                    </span>
-                                </div>
-                            </div>
-                        @else
-                            <span class="text-3xl font-bold text-green-600">
-                                Rp {{ number_format($product->price, 0, ',', '.') }}
+                            <span class="rounded-full bg-green-700/90 px-3 py-1 text-xs font-semibold text-white">
+                                -{{ $product->discount }}%
+                            </span>
+                        @endif
+                        @if ($product->is_featured)
+                            <span class="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-stone-800 inline-flex items-center gap-1">
+                                <svg class="h-3.5 w-3.5 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                Unggulan
                             </span>
                         @endif
                     </div>
+
+                    @if ($product->stock === 0)
+                        <div class="absolute inset-0 flex items-center justify-center bg-stone-900/45">
+                            <span class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-stone-900">Stok Habis</span>
+                        </div>
+                    @endif
                 </div>
 
-                <!-- Store Info -->
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <img src="{{ $product->shop->logo ?? asset('images/placeholder.png') }}"
-                                alt="{{ $product->shop->name }}" class="w-12 h-12 rounded-full object-cover" />
-                            <div>
-                                <h3 class="font-semibold text-gray-900">{{ $product->shop->name }}</h3>
-                                <p class="text-sm text-gray-600">{{ $product->shop->address ?? 'Tidak tersedia' }}</p>
-                                <div class="flex items-center gap-2 text-sm">
-                                    <svg class="h-4 w-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <span>{{ $product->shop->rating ?? 0 }}</span>
-                                    <span class="text-gray-400">•</span>
-                                    <span class="text-gray-600">{{ $product->shop->response_rate ?? 0 }}% respon</span>
-                                </div>
-                            </div>
-                        </div>
-                        {{-- <a href="{{ route('shops.show', $product->shop->id) }}"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                            Lihat Toko
-                        </a> --}}
-                    </div>
-                </div>
-
-                <!-- Quantity and Actions -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah</label>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center border border-gray-300 rounded-lg">
-                                <button wire:click="decrementQuantity" class="p-2 hover:bg-gray-100 transition-colors">
-                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <span class="px-4 py-2 font-medium">{{ $quantity }}</span>
-                                <button wire:click="incrementQuantity"
-                                    {{ $quantity >= $product->stock ? 'disabled' : '' }}
-                                    class="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <span class="text-sm text-gray-600">
-                                Stok: {{ $product->stock }} tersisa
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button wire:click="addToCart" {{ $product->stock === 0 ? 'disabled' : '' }}
-                            class="{{ $product->stock === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700' }} flex-1 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 6H6.28l-.957-3.83A1 1 0 005 1H3z">
-                                </path>
-                            </svg>
-                            {{ $product->stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang' }}
-                        </button>
-
-                        @if ($product->stock > 0)
-                            <button wire:click="orderViaWhatsApp"
-                                class="flex-1 py-3 px-4 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
-                                💬 Pesan via WhatsApp
+                @if (count($productImages) > 1)
+                    <div class="mt-4 flex gap-3 overflow-x-auto pb-1">
+                        @foreach ($productImages as $index => $image)
+                            <button wire:click="selectImage({{ $index }})" aria-label="Gambar {{ $index + 1 }}"
+                                class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border transition
+                                    {{ $selectedImage === $index
+                                        ? 'border-transparent ring-2 ring-green-700'
+                                        : 'border-stone-200/70 hover:border-stone-300' }}">
+                                <img src="{{ $image }}" alt="{{ $product->name }} {{ $index + 1 }}"
+                                    class="h-full w-full object-cover {{ $selectedImage === $index ? '' : 'opacity-80 hover:opacity-100' }} transition" />
                             </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            {{-- Buy box --}}
+            <div class="lg:col-span-5 reveal lg:sticky lg:top-24" style="--i: 1">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-green-700">
+                    {{ $product->category->name ?? 'Produk UMKM' }}
+                </p>
+                <h1 class="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-stone-900 leading-tight">
+                    {{ $product->name }}
+                </h1>
+
+                {{-- Rating + sold --}}
+                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <span class="inline-flex items-center gap-1.5">
+                        <svg class="h-4 w-4 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span class="font-semibold text-stone-900">{{ number_format($averageRating, 1) }}</span>
+                    </span>
+                    <span class="text-stone-300">·</span>
+                    <span class="text-stone-500">{{ $product->sold ?? 0 }} terjual</span>
+                </div>
+
+                {{-- Price --}}
+                <div class="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span class="text-xs font-medium text-stone-500">Rp</span>
+                    <span class="text-3xl font-bold tracking-tight text-stone-900">{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                    @if ($product->discount)
+                        <span class="text-base text-stone-400 line-through">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
+                    @endif
+                </div>
+
+                <div class="mt-6 h-px bg-stone-200"></div>
+
+                {{-- Store --}}
+                <div class="mt-6 flex items-center gap-3">
+                    <img src="{{ $shopLogo }}" alt="{{ $product->shop->name }}"
+                        class="h-12 w-12 rounded-xl object-cover ring-1 ring-stone-200/70 shrink-0" />
+                    <div class="min-w-0 flex-1">
+                        <a href="{{ route('shops.show', $product->shop->slug) }}"
+                            class="text-sm font-semibold text-stone-900 hover:text-green-700 transition-colors block truncate">
+                            {{ $product->shop->name }}
+                        </a>
+                        <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stone-500">
+                            <span class="inline-flex items-center gap-1">
+                                <svg class="h-3.5 w-3.5 fill-amber-500 text-amber-500" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                {{ $product->shop->rating ?? 0 }}
+                            </span>
+                            <span class="inline-flex items-center gap-1 truncate">
+                                <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                                </svg>
+                                <span class="truncate">{{ $product->shop->address ?? 'Lokasi tidak tersedia' }}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <a href="{{ route('shops.show', $product->shop->slug) }}"
+                        class="shrink-0 rounded-lg border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700 hover:border-green-700 hover:text-green-700 active:scale-[0.98] transition">
+                        Kunjungi
+                    </a>
+                </div>
+
+                {{-- Quantity --}}
+                <div class="mt-6">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-stone-700">Jumlah</label>
+                        @if ($product->stock > 0 && $product->stock < 10)
+                            <span class="text-xs font-medium text-amber-600">Sisa {{ $product->stock }} unit</span>
                         @endif
                     </div>
+                    <div class="mt-2 flex items-center gap-4">
+                        <div class="inline-flex items-center rounded-lg border border-stone-300 bg-white">
+                            <button wire:click="decrementQuantity" aria-label="Kurangi jumlah"
+                                class="p-2.5 text-stone-600 hover:text-green-700 active:scale-[0.92] transition">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                                </svg>
+                            </button>
+                            <span class="w-12 text-center text-sm font-semibold tabular-nums text-stone-900">{{ $quantity }}</span>
+                            <button wire:click="incrementQuantity" @disabled($quantity >= $product->stock)
+                                aria-label="Tambah jumlah"
+                                class="p-2.5 text-stone-600 hover:text-green-700 active:scale-[0.92] transition disabled:cursor-not-allowed disabled:text-stone-300">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="text-sm text-stone-500">Stok {{ $product->stock }}</span>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="mt-6 space-y-3">
+                    <button wire:click="addToCart" @disabled($product->stock === 0)
+                        class="w-full rounded-lg px-4 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400
+                            {{ $product->stock === 0 ? '' : 'bg-green-700 text-white hover:bg-green-800' }}
+                            inline-flex items-center justify-center gap-2">
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .894.448.864.957L4.5 21h13.5l.75-12H6" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25h6M12 17.25v-6" />
+                        </svg>
+                        {{ $product->stock === 0 ? 'Stok Habis' : 'Tambah ke Keranjang' }}
+                    </button>
 
                     <div class="flex gap-3">
-                        <button
-                            class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                </path>
+                        <button type="button" wire:click="toggleFavorite"
+                            aria-pressed="{{ $isFavorited ? 'true' : 'false' }}"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition active:scale-[0.98]
+                                {{ $isFavorited
+                                    ? 'border-green-700 bg-green-50 text-green-800'
+                                    : 'border-stone-300 text-stone-600 hover:border-green-700 hover:text-green-700' }}">
+                            <svg class="h-4 w-4" fill="{{ $isFavorited ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.312-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                             </svg>
-                            Favorit
+                            {{ $isFavorited ? 'Difavoritkan' : 'Favorit' }}
+                            @if ($favoriteCount > 0)
+                                <span class="rounded-full bg-white/70 px-1.5 text-xs tabular-nums">{{ $favoriteCount }}</span>
+                            @endif
                         </button>
-                        <button
-                            class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8.684 13.342C9.589 12.437 10 11.174 10 9.5c0-1.933-.716-3.696-1.9-5.0m0 0C3.9 2.7 1 5.6 1 9.5s2.9 6.8 7.1 8.3m0 0c1.184-1.304 1.9-3.067 1.9-5.0c0-1.933-.716-3.696-1.9-5">
-                                </path>
+
+                        <button type="button"
+                            x-data="{
+                                share() {
+                                    const url = window.location.href;
+                                    const payload = {
+                                        title: @js($product->name),
+                                        text: @js('Lihat '.$product->name.' di CISMART'),
+                                        url,
+                                    };
+                                    if (navigator.share) {
+                                        navigator.share(payload).catch(() => {});
+                                        return;
+                                    }
+                                    if (navigator.clipboard) {
+                                        navigator.clipboard.writeText(url)
+                                            .then(() => Livewire.dispatch('notify', { message: 'Tautan produk disalin.', type: 'success' }))
+                                            .catch(() => Livewire.dispatch('notify', { message: 'Gagal menyalin tautan.', type: 'error' }));
+                                        return;
+                                    }
+                                    Livewire.dispatch('notify', { message: 'Perangkat tidak mendukung berbagi.', type: 'error' });
+                                },
+                            }"
+                            @click="share()"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-stone-300 px-3 py-2.5 text-sm font-medium text-stone-600 transition hover:border-green-700 hover:text-green-700 active:scale-[0.98]">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
                             </svg>
                             Bagikan
                         </button>
@@ -177,172 +230,68 @@
             </div>
         </div>
 
-        <!-- Product Details and Reviews -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="border-b border-gray-200">
-                <nav class="flex">
+        {{-- Details + reviews --}}
+        <div class="mt-14 reveal" style="--i: 2">
+            <div class="border-b border-stone-200">
+                <nav class="flex gap-8">
                     <button wire:click="$set('showReviews', false)"
-                        class="px-6 py-4 font-medium text-sm transition-colors {{ !$showReviews ? 'bg-green-50 text-green-600 border-b-2 border-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
+                        class="pb-3.5 px-1 -mb-px border-b-2 text-sm transition-colors {{ !$showReviews ? 'border-green-700 text-green-700 font-semibold' : 'border-transparent text-stone-500 hover:text-stone-700' }}">
                         Deskripsi Produk
                     </button>
                     <button wire:click="$set('showReviews', true)"
-                        class="px-6 py-4 font-medium text-sm transition-colors {{ $showReviews ? 'bg-green-50 text-green-600 border-b-2 border-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }}">
-                        Ulasan ({{ count($mockReviews) }})
+                        class="pb-3.5 px-1 -mb-px border-b-2 text-sm transition-colors {{ $showReviews ? 'border-green-700 text-green-700 font-semibold' : 'border-transparent text-stone-500 hover:text-stone-700' }}">
+                        Ulasan
                     </button>
                 </nav>
             </div>
 
-            <div class="p-6">
+            <div class="pt-8">
                 @if (!$showReviews)
-                    <!-- Description Tab -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Deskripsi Produk</h3>
-                        <p class="text-gray-700 leading-relaxed">{{ $product->description }}</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div class="lg:col-span-7">
+                            <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Deskripsi</h3>
+                            <p class="mt-3 text-stone-600 leading-relaxed max-w-[65ch] whitespace-pre-line">{{ $product->description }}</p>
+                        </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            <div>
-                                <h4 class="font-medium text-gray-900 mb-3">Spesifikasi</h4>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Kategori:</span>
-                                        <span
-                                            class="font-medium">{{ $product->category->name ?? 'Tidak tersedia' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Berat:</span>
-                                        <span class="font-medium">{{ $product->weight_gram }} gram</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Kondisi:</span>
-                                        <span class="font-medium">Baru</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Asal:</span>
-                                        <span
-                                            class="font-medium">{{ $product->shop->address ?? 'Tidak tersedia' }}</span>
-                                    </div>
+                        <div class="lg:col-span-5">
+                            <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Spesifikasi</h3>
+                            <dl class="mt-3 divide-y divide-stone-200 border-t border-stone-200 text-sm">
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Kategori</dt>
+                                    <dd class="text-right font-medium text-stone-900">{{ $product->category->name ?? 'Tidak tersedia' }}</dd>
                                 </div>
-                            </div>
-
-                            <div>
-                                <h4 class="font-medium text-gray-900 mb-3">Informasi Pengiriman</h4>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Pengiriman dari:</span>
-                                        <span
-                                            class="font-medium">{{ $product->shop->address ?? 'Tidak tersedia' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Ongkir:</span>
-                                        <span class="font-medium">Mulai Rp 15.000</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Estimasi tiba:</span>
-                                        <span class="font-medium">1-3 hari kerja</span>
-                                    </div>
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Berat</dt>
+                                    <dd class="text-right font-medium text-stone-900">{{ $product->weight_gram }} gram</dd>
                                 </div>
-                            </div>
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Kondisi</dt>
+                                    <dd class="text-right font-medium text-stone-900">Baru</dd>
+                                </div>
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Dikirim dari</dt>
+                                    <dd class="text-right font-medium text-stone-900">{{ $product->shop->address ?? 'Tidak tersedia' }}</dd>
+                                </div>
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Ongkir</dt>
+                                    <dd class="text-right font-medium text-stone-900">Mulai Rp 15.000</dd>
+                                </div>
+                                <div class="flex justify-between gap-4 py-3">
+                                    <dt class="text-stone-500">Estimasi tiba</dt>
+                                    <dd class="text-right font-medium text-stone-900">1–3 hari kerja</dd>
+                                </div>
+                            </dl>
                         </div>
                     </div>
                 @else
-                    <!-- Reviews Tab -->
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Ulasan Pembeli</h3>
-                            <div class="flex items-center gap-2">
-                                <svg class="h-5 w-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                    <path
-                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                    </path>
-                                </svg>
-                                <span class="font-medium">{{ number_format($averageRating, 1) }}</span>
-                                <span class="text-gray-500">dari {{ count($mockReviews) }} ulasan</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            @foreach ($mockReviews as $review)
-                                <div class="border border-gray-200 rounded-lg p-4">
-                                    <div class="flex items-start gap-3">
-                                        <div
-                                            class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                            <svg class="h-5 w-5 text-green-600" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                                    clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <div>
-                                                    <h4 class="font-medium text-gray-900">{{ $review['user'] }}</h4>
-                                                    <div class="flex items-center gap-1">
-                                                        @for ($i = 0; $i < $review['rating']; $i++)
-                                                            <svg class="h-4 w-4 text-yellow-400 fill-current"
-                                                                viewBox="0 0 20 20">
-                                                                <path
-                                                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                                                </path>
-                                                            </svg>
-                                                        @endfor
-                                                        @for ($i = $review['rating']; $i < 5; $i++)
-                                                            <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20">
-                                                                <path
-                                                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                                                </path>
-                                                            </svg>
-                                                        @endfor
-                                                    </div>
-                                                </div>
-                                                <span class="text-sm text-gray-500">
-                                                    {{ \Carbon\Carbon::parse($review['date'])->translatedFormat('d F Y') }}
-                                                </span>
-                                            </div>
-                                            <p class="text-gray-700 mb-3">{{ $review['comment'] }}</p>
-                                            <div class="flex items-center gap-4 text-sm">
-                                                <button
-                                                    class="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors">
-                                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path
-                                                            d="M2 10.5a1.5 1.5 0 113 0v-6a1.5 1.5 0 01-3 0v6zM14 4a1 1 0 100 2h1a1 1 0 100-2h-1zm-2 7a4 4 0 118 0 4 4 0 01-8 0zm12-3h-1.535A5.99 5.99 0 0014 6.5V4a1 1 0 00-1-1H9.5a1 1 0 00-1 1v1H5V4a1 1 0 00-1-1H1.5a1 1 0 00-1 1v2a1 1 0 001 1v10a2 2 0 002 2h10a2 2 0 002-2v-10a1 1 0 001-1V4a1 1 0 00-1-1z">
-                                                        </path>
-                                                    </svg>
-                                                    Membantu ({{ $review['helpful'] }})
-                                                </button>
-                                                <button
-                                                    class="flex items-center gap-1 text-gray-600 hover:text-red-600 transition-colors">
-                                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path
-                                                            d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 4a1 1 0 100 2h1a1 1 0 100-2h-1zm2 7a4 4 0 11-8 0 4 4 0 018 0zm-2-3h-1.535A5.99 5.99 0 0016 6.5V4a1 1 0 011-1h4.5a1 1 0 011 1v2a1 1 0 01-1 1v10a2 2 0 01-2 2h-10a2 2 0 01-2-2v-10a1 1 0 01-1-1V4a1 1 0 011-1h1z">
-                                                        </path>
-                                                    </svg>
-                                                    Tidak membantu
-                                                </button>
-                                                <button
-                                                    class="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors">
-                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                                                        </path>
-                                                    </svg>
-                                                    Balas
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div class="text-center">
-                            <button
-                                class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                                Muat Lebih Banyak Ulasan
-                            </button>
-                        </div>
+                    <div class="rounded-2xl border border-dashed border-stone-300 bg-white p-12 text-center">
+                        <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
+                            <svg class="h-6 w-6 text-stone-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                            </svg>
+                        </span>
+                        <h3 class="mt-4 text-sm font-semibold text-stone-900">Belum ada ulasan</h3>
+                        <p class="mt-1 text-xs text-stone-500">Ulasan dari pembeli yang pernah bertransaksi akan muncul di sini.</p>
                     </div>
                 @endif
             </div>

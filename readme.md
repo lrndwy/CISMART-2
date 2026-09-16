@@ -33,3 +33,22 @@ Beberapa program yang digunakan adalah:
   docker compose up -d app
   ```
 - Jangan pakai `--no-cache` kecuali benar-benar perlu; itu memaksa unduh & compile ulang semuanya.
+
+### Menjalankan tanpa Docker
+```bash
+bash scripts/start-local.sh
+```
+
+## Struktur Direktori
+```
+laravel_app/        Aplikasi Laravel
+ml_service/         ML service (Flask) + data training
+machine_learning/   Dataset & notebook eksperimen
+docker/             Konfigurasi image (php, apache)
+docs/               Semua panduan (deployment, ML, testing)
+scripts/            Skrip operasional (start, deploy, train, debug)
+docker-compose.yml  Orkestrasi container
+```
+
+## Dokumentasi
+Semua panduan ada di `docs/`: `DEPLOYMENT_GUIDE.md`, `ML_INTEGRATION_GUIDE.md`, `ML_TRAINING_PRODUCTION_GUIDE.md`, `DOCKER_HEALTHCHECK_FIX.md`, dan lainnya.

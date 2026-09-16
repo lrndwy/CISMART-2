@@ -71,7 +71,7 @@ Output:
 
 ```bash
 cd ../laravel_app
-php test_filament_create_flow.php
+php scripts/test_filament_create_flow.php
 ```
 
 ---
@@ -210,10 +210,10 @@ cd /var/www/cismart
 git pull origin master
 
 # Deploy dengan script
-bash deploy_and_train.sh
+bash scripts/deploy_and_train.sh
 ```
 
-Script `deploy_and_train.sh` akan:
+Script `scripts/deploy_and_train.sh` akan:
 
 - Build containers
 - Setup Laravel

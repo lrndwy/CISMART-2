@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section; // <- Section (v4)
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Utilities\Get as UtilitiesGet;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +92,16 @@ class SellerApplicationResource extends Resource
                             ->label('Email Toko')
                             ->disabled()
                             ->dehydrated(false),
+
+                        FileUpload::make('business_documents')
+                            ->label('Dokumen Pendukung')
+                            ->multiple()
+                            ->disk('public')
+                            ->directory('seller-documents')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('KTP/SIUP dan dokumen pendukung yang diunggah pendaftar.')
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                 Section::make('Review')

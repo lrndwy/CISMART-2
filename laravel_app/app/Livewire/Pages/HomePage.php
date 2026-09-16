@@ -4,7 +4,6 @@ namespace App\Livewire\Pages;
 
 use App\Models\Product;
 use App\Models\Shop;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -26,58 +25,42 @@ class HomePage extends Component
             ->take(6)
             ->get();
 
-        $stats = [
-            ['icon' => 'shopping-bag', 'label' => 'UMKM Terdaftar', 'value' => Shop::where('status', 'approved')->count().'+'],
-            ['icon' => 'users', 'label' => 'Pembeli Aktif', 'value' => '10,000+'],
-            ['icon' => 'truck', 'label' => 'Produk Terjual', 'value' => '50,000+'],
-            ['icon' => 'shield-check', 'label' => 'Transaksi Aman', 'value' => '100%'],
-        ];
+        $productCount = Product::published()->count();
+        $shopCount = Shop::where('status', 'approved')->count();
 
         $benefits = [
             [
                 'title' => 'Mudah & Praktis',
                 'description' => 'Berbelanja produk UMKM Cilacap dari rumah dengan pengalaman yang mudah dan menyenangkan.',
-                'icon' => '🛒',
+                'icon' => 'cart',
             ],
             [
                 'title' => 'Produk Berkualitas',
                 'description' => 'Semua produk telah melalui kurasi ketat untuk memastikan kualitas terbaik bagi konsumen.',
-                'icon' => '⭐',
+                'icon' => 'star',
             ],
             [
                 'title' => 'Dukung Ekonomi Lokal',
                 'description' => 'Setiap pembelian Anda membantu mengembangkan ekonomi UMKM di Kabupaten Cilacap.',
-                'icon' => '💝',
+                'icon' => 'heart',
             ],
             [
                 'title' => 'Pengiriman Cepat',
                 'description' => 'Jaringan logistik terintegrasi memastikan produk sampai dengan cepat dan aman.',
-                'icon' => '🚚',
+                'icon' => 'truck',
             ],
         ];
 
         return view('livewire.pages.home-page', [
             'featuredProducts' => $featuredProducts,
             'topStores' => $topStores,
-            'stats' => $stats,
+            'productCount' => $productCount,
+            'shopCount' => $shopCount,
             'benefits' => $benefits,
         ]);
     }
 
-    public function navigateToProducts()
-    {
-        return redirect()->route('products.index');
-    }
 
-    public function navigateToCommunity()
-    {
-        return redirect()->route('community.index');
-    }
-
-    public function navigateToBlog()
-    {
-        return redirect()->route('blog.index');
-    }
 
     public function selectStore($shopId)
     {
@@ -86,10 +69,6 @@ class HomePage extends Component
 
     public function handleSellerRegistration()
     {
-        if (Auth::check()) {
-            return $this->redirect('/admin');
-        }
-
-        return $this->redirect('/admin/login');
+        return $this->redirect(route('register.umkm'));
     }
 }

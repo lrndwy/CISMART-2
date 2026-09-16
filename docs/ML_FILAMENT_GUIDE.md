@@ -322,5 +322,5 @@ Jika ML Service offline saat create, Anda bisa prediksi manual nanti:
 Jika ada masalah atau pertanyaan:
 
 1. Check dokumentasi lengkap di `ML_INTEGRATION_GUIDE.md`
-2. Check test script: `php test_ml_prediction.php`
+2. Check test script: `php scripts/test_ml_prediction.php`
 3. Review logs: `docker compose logs ml_service`

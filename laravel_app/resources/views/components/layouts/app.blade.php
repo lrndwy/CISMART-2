@@ -11,7 +11,7 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <!-- Styles -->
@@ -25,7 +25,22 @@
             @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
             @theme {
-                --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+                --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+            }
+
+            @keyframes fade-up {
+                from { opacity: 0; transform: translateY(12px); }
+                to   { opacity: 1; transform: none; }
+            }
+
+            .reveal {
+                animation: fade-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+                animation-delay: calc(var(--i, 0) * 50ms);
+                will-change: transform;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .reveal { animation: none; }
             }
         </style>
     @endif
@@ -35,7 +50,7 @@
 
 
 
-<body class="antialiased bg-gray-50">
+<body class="antialiased bg-stone-50">
     <!-- Header Component -->
     <livewire:components.header />
 

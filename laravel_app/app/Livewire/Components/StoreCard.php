@@ -29,13 +29,13 @@ class StoreCard extends Component
     {
         return $this->shop->banner
             ? Storage::url($this->shop->banner)
-            : asset('images/shop-banner-placeholder.jpg');
+            : 'https://picsum.photos/seed/cismart-s' . $this->shop->id . '/800/300';
     }
 
     public function getLogoUrlProperty()
     {
         return $this->shop->logo
             ? Storage::url($this->shop->logo)
-            : asset('images/shop-logo-placeholder.jpg');
+            : 'https://picsum.photos/seed/cismart-l' . $this->shop->id . '/96/96';
     }
 }

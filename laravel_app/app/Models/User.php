@@ -90,6 +90,19 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Shop::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function hasOrderedFrom(Shop $shop): bool
+    {
+        return OrderItem::query()
+            ->where('shop_id', $shop->id)
+            ->whereHas('order', fn ($query) => $query->where('user_id', $this->id))
+            ->exists();
+    }
+
     public function initials(): string
     {
         $name = $this->name ?? '';

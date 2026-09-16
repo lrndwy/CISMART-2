@@ -406,9 +406,9 @@ Output:
 2. `laravel_app/database/migrations/2025_11_21_050250_make_prediction_result_columns_nullable_in_ml_predictions_table.php`
 3. `laravel_app/app/Filament/Resources/MlPredictionResource.php`
 4. `laravel_app/app/Filament/Resources/MlPredictionResource/Pages/*.php` (4 files)
-5. `laravel_app/test_ml_connection.php` - Connection test script
-6. `laravel_app/test_filament_create_flow.php` - End-to-end test script
-7. `laravel_app/test_filament_ml.php` - Comprehensive test suite
+5. `laravel_app/scripts/test_ml_connection.php` - Connection test script
+6. `laravel_app/scripts/test_filament_create_flow.php` - End-to-end test script
+7. `laravel_app/scripts/test_filament_ml.php` - Comprehensive test suite
 8. `ml_service/sample_training_data.csv` - 50 rows training data
 9. `ml_service/train_model.py` - Training script
 10. `ML_TESTING_REPORT.md` - Complete test documentation

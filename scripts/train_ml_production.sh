@@ -3,6 +3,7 @@
 # Gunakan jika automatic training di CI/CD gagal
 
 set -e
+cd "$(dirname "$0")/.."
 
 echo "🤖 Manual ML Model Training for Production"
 echo "=========================================="

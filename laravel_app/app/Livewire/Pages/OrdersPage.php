@@ -20,7 +20,7 @@ class OrdersPage extends Component
     public function render()
     {
         $orders = Auth::check()
-            ? Order::query()->where('user_id', Auth::id())->latest()->get()
+            ? Order::query()->with('items')->where('user_id', Auth::id())->latest()->get()
             : collect();
 
         return view('livewire.pages.orders-page', compact('orders'));

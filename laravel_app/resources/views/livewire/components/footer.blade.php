@@ -6,7 +6,7 @@
             {{-- Company Info --}}
             <div>
                 <div class="flex items-center mb-4">
-                    <img src="{{ asset('/logo-nobg.png') }}" alt="CISMART Logo" width="100">
+                    <img src="{{ asset('/logo-nobg.png') }}" alt="CISMART Logo" width="140">
                 </div>
                 <p class="text-gray-400 mb-4">
                     Platform digital untuk mendukung UMKM Cilacap berkembang dan menjangkau pasar yang lebih luas di
@@ -41,12 +41,6 @@
                         </button>
                     </li>
                     <li>
-                        <button wire:click="navigate('community')"
-                            class="text-gray-400 hover:text-white transition-colors">
-                            Komunitas
-                        </button>
-                    </li>
-                    <li>
                         <button wire:click="navigate('blog')" class="text-gray-400 hover:text-white transition-colors">
                             Blog & Artikel
                         </button>
@@ -65,12 +59,12 @@
                 <h4 class="text-lg font-semibold mb-4">Dukungan</h4>
                 <ul class="space-y-2 text-gray-400">
                     <li>
-                        <button wire:click="navigate('community')" class="hover:text-white transition-colors">
+                        <a href="{{ route('products.index') }}" class="hover:text-white transition-colors">
                             Cara Berbelanja
-                        </button>
+                        </a>
                     </li>
                     <li>
-                        <button wire:click="navigate('community')" class="hover:text-white transition-colors">
+                        <button wire:click="navigate('shops')" class="hover:text-white transition-colors">
                             Cara Berjualan
                         </button>
                     </li>

@@ -8,6 +8,7 @@
     isSearching: false,
     searchQuery: '',
     searchResults: [],
+    locateError: '',
 
     init() {
         this.$nextTick(() => {
@@ -141,23 +142,58 @@
     },
 
     getCurrentLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    if (this.marker) this.marker.setLatLng([lat, lng]);
-                    if (this.map) this.map.setView([lat, lng], 15);
-                    this.updatePosition(lat, lng);
-                },
-                (error) => {
-                    console.error('Geolocation error:', error);
-                    alert('Tidak dapat mengakses lokasi. Pastikan izin lokasi sudah diberikan.');
-                }, { enableHighAccuracy: true, timeout: 10000 }
-            );
-        } else {
-            alert('Browser tidak mendukung geolocation.');
+        this.locateError = '';
+
+        if (! ('geolocation' in navigator)) {
+            this.locateError = 'Browser ini tidak mendukung pembacaan lokasi.';
+            return;
         }
+
+        if (window.isSecureContext === false) {
+            this.locateError = 'Pembacaan lokasi butuh koneksi aman (HTTPS). Buka panel lewat https:// atau localhost.';
+            return;
+        }
+
+        const request = (options) => new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+        });
+
+        // Coba pembacaan cepat (akurasi kasar) dulu, baru presisi tinggi.
+        // enableHighAccuracy langsung dengan timeout pendek sering timeout di
+        // perangkat tanpa GPS walau izin lokasi sudah diberikan.
+        request({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 })
+            .then(null, (error) => {
+                if (error && error.code === 1) {
+                    throw error;
+                }
+
+                return request({ enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+            })
+            .then((position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                if (this.marker) this.marker.setLatLng([lat, lng]);
+                if (this.map) this.map.setView([lat, lng], 15);
+                this.updatePosition(lat, lng);
+            })
+            .catch((error) => {
+                console.error('Geolocation error:', error);
+                this.locateError = this.locationErrorMessage(error);
+            });
+    },
+
+    locationErrorMessage(error) {
+        // 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+        if (error && error.code === 1) {
+            return 'Akses lokasi diblokir untuk situs ini. Aktifkan izin lokasi di pengaturan situs browser, lalu muat ulang.';
+        }
+        if (error && error.code === 2) {
+            return 'Lokasi perangkat tidak tersedia saat ini. Coba lagi, atau tandai titik di peta.';
+        }
+        if (error && error.code === 3) {
+            return 'Waktu pembacaan lokasi habis. Coba lagi, atau tandai titik di peta.';
+        }
+        return 'Tidak dapat mengakses lokasi. Tandai titik di peta secara manual.';
     }
 }" x-init="init()" class="space-y-3">
     <!-- Search Box -->
@@ -201,6 +237,9 @@
                 <span>Lokasi Saya</span>
             </button>
         </div>
+
+        <p x-show="locateError" x-text="locateError" x-cloak
+            class="mt-2 text-sm text-red-600 dark:text-red-400"></p>
     </div>
 
     <!-- Map Container -->

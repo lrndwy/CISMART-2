@@ -1,6 +1,8 @@
 #!/bin/bash
 # Script untuk debug ML service container yang gagal
 
+cd "$(dirname "$0")/.."
+
 echo "🔍 Debugging ML Service Container"
 echo "=================================="
 

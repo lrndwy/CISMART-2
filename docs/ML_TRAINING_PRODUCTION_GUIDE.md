@@ -81,7 +81,7 @@ curl http://localhost:5000/api/model-info
 ```bash
 ssh user@vps-ip
 cd /var/www/cismart
-bash train_ml_production.sh
+bash scripts/train_ml_production.sh
 ```
 
 #### PowerShell (Windows):
@@ -89,7 +89,7 @@ bash train_ml_production.sh
 ```powershell
 ssh user@vps-ip
 cd /var/www/cismart
-powershell -File train_ml_production.ps1
+powershell -File scripts/train_ml_production.ps1
 ```
 
 ### Method 2: Manual Commands
@@ -232,7 +232,7 @@ Ready to accept prediction requests
 ```bash
 ssh user@vps-ip
 cd /var/www/cismart
-bash train_ml_production.sh
+bash scripts/train_ml_production.sh
 ```
 
 #### C. Check Container Status
@@ -429,7 +429,7 @@ cp ml_service/combined_training_data_backup.xlsx \
    ml_service/combined_training_data.xlsx
 
 # 3. Retrain with old data
-bash train_ml_production.sh
+bash scripts/train_ml_production.sh
 
 # 4. Or rollback Docker container
 docker compose down
@@ -444,7 +444,7 @@ docker compose up -d --build
 **Issues with training?**
 
 1. Check CI/CD logs di GitHub Actions
-2. Run manual training: `bash train_ml_production.sh`
+2. Run manual training: `bash scripts/train_ml_production.sh`
 3. Check Docker logs: `docker compose logs ml_service`
 4. Contact: laurasari@pnc.ac.id
 

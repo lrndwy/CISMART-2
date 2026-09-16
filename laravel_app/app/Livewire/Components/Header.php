@@ -44,10 +44,10 @@ class Header extends Component
             'home' => 'home',
             'products' => 'products.index',
             'shops' => 'shops.index',
-            'community' => 'community.index',
             'blog' => 'blog.index',
             'cart' => 'cart.index',
             'orders' => 'orders.index',
+            'profile' => 'profile',
             'dashboard' => 'dashboard',
         ];
 

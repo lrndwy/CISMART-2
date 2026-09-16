@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -85,82 +84,5 @@ class RolesAndPermissionsSeeder extends Seeder
             'reviews.view',
             'reviews.create',
         ]);
-
-        // Create demo users
-
-        // Admin user
-        $lauraSari = User::firstOrCreate(
-            ['email' => 'laurasari@pnc.ac.id'],
-            [
-                'name' => 'Laura Sari',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567895',
-                'address' => 'Jl. Pendidikan No. 30, Cilacap',
-                'email_verified_at' => now(),
-            ]
-        );
-        $lauraSari->assignRole('admin');
-
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@cismart.test'],
-            [
-                'name' => 'Admin CISMART',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567890',
-                'address' => 'Jl. Admin No. 1, Cilacap',
-                'email_verified_at' => now(),
-            ]
-        );
-        $admin->assignRole(roles: 'admin');
-
-        // Seller users
-        $seller1 = User::firstOrCreate(
-            ['email' => 'seller1@cismart.test'],
-            [
-                'name' => 'Sari Handmade',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567891',
-                'address' => 'Jl. Kerajinan No. 10, Cilacap',
-                'email_verified_at' => now(),
-            ]
-        );
-        $seller1->assignRole('seller');
-
-        $seller2 = User::firstOrCreate(
-            ['email' => 'seller2@cismart.test'],
-            [
-                'name' => 'Budi Kuliner',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567892',
-                'address' => 'Jl. Makanan No. 15, Cilacap',
-                'email_verified_at' => now(),
-            ]
-        );
-        $seller2->assignRole('seller');
-
-        // Buyer users
-        $buyer1 = User::firstOrCreate(
-            ['email' => 'buyer1@cismart.test'],
-            [
-                'name' => 'Andi Pembeli',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567893',
-                'address' => 'Jl. Konsumen No. 20, Jakarta',
-                'email_verified_at' => now(),
-            ]
-        );
-        $buyer1->assignRole('buyer');
-
-        $buyer2 = User::firstOrCreate(
-            ['email' => 'buyer2@cismart.test'],
-            [
-                'name' => 'Rina Shopper',
-                'password' => bcrypt('password'),
-                'phone' => '+6281234567894',
-                'address' => 'Jl. Belanja No. 25, Bandung',
-                'email_verified_at' => now(),
-            ]
-        );
-        $buyer2->assignRole('buyer');
     }
 }

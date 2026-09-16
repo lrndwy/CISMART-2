@@ -131,7 +131,7 @@ public function up(): void
 
 ### 3. Test Script Komprehensif
 
-**File:** `test_filament_ml.php`
+**File:** `laravel_app/scripts/test_filament_ml.php`
 
 **Coverage:**
 
@@ -532,5 +532,5 @@ confidence        | numeric(5,4) | YES | nullable
 ---
 
 **Generated:** 21 November 2025, 05:10 WIB  
-**Test Script:** `test_filament_ml.php`  
+**Test Script:** `laravel_app/scripts/test_filament_ml.php`  
 **Status:** ✅ All Tests Passed

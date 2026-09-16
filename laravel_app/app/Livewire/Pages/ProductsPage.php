@@ -133,7 +133,7 @@ class ProductsPage extends Component
     public function getFilteredProductsProperty()
     {
         $query = Product::query()
-            ->where('status', 'published')
+            ->published()
             ->with('shop', 'category');
 
         // Category filter

@@ -90,8 +90,6 @@ class Order extends Model
     public function getPaymentMethodLabelAttribute(): string
     {
         return match ($this->payment_method) {
-            'whatsapp-order' => 'Pesan via WhatsApp',
-            'bank-transfer' => 'Transfer Bank',
             'cod' => 'Bayar di Tempat',
             'qris' => 'QRIS',
             default => $this->payment_method,

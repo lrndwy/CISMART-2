@@ -5,12 +5,16 @@ namespace App\Livewire\Pages;
 use Livewire\Component;
 use App\Models\Shop;
 use App\Models\Product;
+use App\Models\Review;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ShopDetailPage extends Component
 {
     public ?Shop $shop = null;
     public string $activeTab = 'products';
+    public int $rating = 0;
+    public string $comment = '';
 
     public function mount($slug)
     {
@@ -29,28 +33,10 @@ class ShopDetailPage extends Component
         }
     }
 
-    public function contactViaWhatsApp()
-    {
-        $message = "🏪 *KONTAK UMKM DARI CISMART*\n\n" .
-            "Halo {$this->shop->name}!\n\n" .
-            "Saya tertarik dengan produk-produk di toko Anda. Mohon informasi lebih lanjut tentang:\n" .
-            "- Katalog produk terbaru\n" .
-            "- Harga dan ketersediaan\n" .
-            "- Cara pemesanan\n\n" .
-            "📍 Lokasi: {$this->shop->address}\n" .
-            "⭐ Rating: {$this->shop->rating}/5\n\n" .
-            "Terima kasih! 🙏";
-
-        $whatsappNumber = $this->shop->phone ?? '6288225292279';
-        $whatsappUrl = "https://wa.me/{$whatsappNumber}?text=" . urlencode($message);
-
-        return redirect()->to($whatsappUrl);
-    }
-
     public function getShopProductsProperty()
     {
         return Product::where('shop_id', $this->shop->id)
-            ->where('status', 'published')
+            ->published()
             ->with('category')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -64,7 +50,7 @@ class ShopDetailPage extends Component
             }
             return Storage::url($this->shop->banner);
         }
-        return asset('images/shop-banner-placeholder.jpg');
+        return 'https://picsum.photos/seed/cismart-s' . $this->shop->id . '/1600/400';
     }
 
     public function getLogoUrlProperty()
@@ -75,63 +61,112 @@ class ShopDetailPage extends Component
             }
             return Storage::url($this->shop->logo);
         }
-        return asset('images/shop-logo-placeholder.jpg');
+        return 'https://picsum.photos/seed/cismart-l' . $this->shop->id . '/240/240';
     }
 
     public function getAchievementsProperty()
     {
         return [
             [
-                'icon' => '🏆',
-                'label' => 'Top Seller',
-                'description' => 'Penjual terbaik bulan ini'
+                'icon' => 'trophy',
+                'label' => 'Toko Terverifikasi',
+                'description' => 'Didata dan disetujui tim CISMART'
             ],
             [
-                'icon' => '⭐',
+                'icon' => 'star',
                 'label' => 'Rating Tinggi',
                 'description' => ($this->shop->rating ?? 0) . '/5 dari ' . ($this->shop->total_reviews ?? 0) . ' ulasan'
             ],
             [
-                'icon' => '🚚',
-                'label' => 'Pengiriman Cepat',
-                'description' => 'Rata-rata kirim dalam 1 hari'
+                'icon' => 'truck',
+                'label' => 'Layanan Kirim',
+                'description' => $this->shop->hasDelivery() ? 'Kirim ke lokasi tersedia' : 'Ambil di toko'
             ],
             [
-                'icon' => '💬',
+                'icon' => 'chat',
                 'label' => 'Responsif',
                 'description' => ($this->shop->response_rate ?? 0) . '% tingkat respons'
             ],
         ];
     }
 
-    public function getMockReviewsProperty()
+    public function setRating(int $rating): void
     {
-        return [
-            [
-                'id' => '1',
-                'user' => 'Sari Wijaya',
-                'rating' => 5,
-                'comment' => 'Produk berkualitas tinggi dan pengiriman sangat cepat. Pelayanan ramah dan profesional.',
-                'date' => '2024-01-15',
-                'product' => 'Batik Cilacap Motif Tradisional'
-            ],
-            [
-                'id' => '2',
-                'user' => 'Budi Santoso',
-                'rating' => 5,
-                'comment' => 'Sudah beberapa kali beli di sini, selalu puas. Kualitas produk konsisten.',
-                'date' => '2024-01-10',
-                'product' => 'Kerajinan Bambu Set'
-            ],
-            [
-                'id' => '3',
-                'user' => 'Maya Indah',
-                'rating' => 4,
-                'comment' => 'Produk bagus, packaging rapi. Hanya saja pengiriman agak lama.',
-                'date' => '2024-01-05',
-                'product' => 'Makanan Ringan Khas Cilacap'
-            ],
-        ];
+        if ($rating >= 1 && $rating <= 5) {
+            $this->rating = $rating;
+        }
+    }
+
+    public function submitReview(): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            $this->redirect(route('login', ['redirect' => route('shops.show', $this->shop->slug)]));
+
+            return;
+        }
+
+        if (! $user->hasOrderedFrom($this->shop)) {
+            $this->dispatch('notify', [
+                'message' => 'Ulasan hanya untuk pembeli yang pernah bertransaksi di toko ini.',
+                'type' => 'error',
+            ]);
+
+            return;
+        }
+
+        if ($this->shop->reviews()->where('user_id', $user->id)->exists()) {
+            $this->dispatch('notify', [
+                'message' => 'Kamu sudah memberi ulasan untuk toko ini.',
+                'type' => 'error',
+            ]);
+
+            return;
+        }
+
+        $this->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['required', 'string', 'min:10', 'max:1000'],
+        ], [
+            'rating.required' => 'Pilih rating bintang dulu.',
+            'rating.between' => 'Rating harus 1 sampai 5 bintang.',
+            'comment.required' => 'Tulis ulasanmu dulu.',
+            'comment.min' => 'Ulasan minimal 10 karakter.',
+            'comment.max' => 'Ulasan maksimal 1000 karakter.',
+        ]);
+
+        $this->shop->reviews()->create([
+            'user_id' => $user->id,
+            'rating' => $this->rating,
+            'comment' => $this->comment,
+        ]);
+
+        $this->shop->refreshRating();
+        $this->reset('rating', 'comment');
+
+        $this->dispatch('notify', ['message' => 'Ulasan terkirim. Terima kasih!', 'type' => 'success']);
+    }
+
+    public function getReviewsProperty()
+    {
+        return $this->shop->reviews()->with('user')->latest()->limit(20)->get();
+    }
+
+    public function getMyReviewProperty(): ?Review
+    {
+        $user = Auth::user();
+
+        return $user ? $this->shop->reviews()->where('user_id', $user->id)->first() : null;
+    }
+
+    public function getCanReviewProperty(): bool
+    {
+        $user = Auth::user();
+
+        return $user !== null
+            && ! $this->shop->reviews()->where('user_id', $user->id)->exists()
+            && $user->hasOrderedFrom($this->shop);
     }
 
     public function render()
@@ -141,7 +176,9 @@ class ShopDetailPage extends Component
             'bannerUrl' => $this->bannerUrl,
             'logoUrl' => $this->logoUrl,
             'achievements' => $this->achievements,
-            'mockReviews' => $this->mockReviews,
+            'reviews' => $this->reviews,
+            'canReview' => $this->canReview,
+            'myReview' => $this->myReview,
         ]);
     }
 }

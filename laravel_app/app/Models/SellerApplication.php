@@ -29,6 +29,16 @@ class SellerApplication extends Model
         'approved_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        // Toko hanya boleh aktif setelah permohonan penjual disetujui.
+        static::updated(function (SellerApplication $application): void {
+            if ($application->wasChanged('status') && $application->status === 'approved') {
+                $application->user?->shops()->update(['status' => 'approved']);
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

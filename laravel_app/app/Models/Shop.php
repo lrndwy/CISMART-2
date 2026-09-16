@@ -51,6 +51,25 @@ class Shop extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function refreshRating(): void
+    {
+        $aggregate = $this->reviews()
+            ->selectRaw('COUNT(*) as total, COALESCE(AVG(rating), 0) as average')
+            ->first();
+
+        $this->newQuery()->whereKey($this->getKey())->update([
+            'rating' => round((float) $aggregate->average, 2),
+            'total_reviews' => (int) $aggregate->total,
+        ]);
+
+        $this->refresh();
+    }
+
     public function isApproved(): bool
     {
         return $this->status === 'approved';

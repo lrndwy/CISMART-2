@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
@@ -44,6 +45,17 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function isFavoritedBy(?User $user): bool
+    {
+        return $user !== null
+            && $this->favorites()->where('user_id', $user->id)->exists();
+    }
+
     protected function firstImage(): Attribute
     {
         return Attribute::make(
@@ -61,9 +73,13 @@ class Product extends Model
         return $this->stock > 0;
     }
 
+    /**
+     * Produk publik: status published DAN tokonya sudah disetujui admin.
+     */
     public function scopePublished($query)
     {
-        return $query->where('status', 'published');
+        return $query->where('status', 'published')
+            ->whereHas('shop', fn ($shop) => $shop->where('status', 'approved'));
     }
 
     public function scopeFeatured($query)

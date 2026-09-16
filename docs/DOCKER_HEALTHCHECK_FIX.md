@@ -156,16 +156,16 @@ docker exec cismart_ml_service curl -X POST \
 
 ## 📝 Debug Tools Created
 
-### 1. `debug_ml_service.ps1` (PowerShell):
+### 1. `scripts/debug_ml_service.ps1` (PowerShell):
 
 ```powershell
-.\debug_ml_service.ps1
+.\scripts\debug_ml_service.ps1
 ```
 
-### 2. `debug_ml_service.sh` (Bash):
+### 2. `scripts/debug_ml_service.sh` (Bash):
 
 ```bash
-bash debug_ml_service.sh
+bash scripts/debug_ml_service.sh
 ```
 
 **Features:**
@@ -229,8 +229,8 @@ docker compose up -d --build
 - ✅ `ml_service/Dockerfile` - Added curl, updated HEALTHCHECK
 - ✅ `docker-compose.yml` - Updated ml_service healthcheck
 - ✅ `.github/workflows/docker-vps.yml` - Extended wait time, better error handling
-- ✅ `debug_ml_service.ps1` - PowerShell debug script
-- ✅ `debug_ml_service.sh` - Bash debug script
+- ✅ `scripts/debug_ml_service.ps1` - PowerShell debug script
+- ✅ `scripts/debug_ml_service.sh` - Bash debug script
 - ✅ `DOCKER_HEALTHCHECK_FIX.md` - This documentation
 
 ---

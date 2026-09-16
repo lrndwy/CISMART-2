@@ -90,8 +90,6 @@ class OrderResource extends Resource
                         Select::make('payment_method')
                             ->label('Metode Pembayaran')
                             ->options([
-                                'whatsapp-order' => 'Pesan via WhatsApp',
-                                'bank-transfer' => 'Transfer Bank',
                                 'cod' => 'Bayar di Tempat',
                                 'qris' => 'QRIS',
                             ])
@@ -310,15 +308,11 @@ class OrderResource extends Resource
                 BadgeColumn::make('payment_method')
                     ->label('Pembayaran')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'whatsapp-order' => 'WhatsApp',
-                        'bank-transfer' => 'Transfer',
                         'cod' => 'COD',
                         'qris' => 'QRIS',
                         default => $state,
                     })
                     ->colors([
-                        'success' => 'whatsapp-order',
-                        'info' => 'bank-transfer',
                         'warning' => 'cod',
                         'primary' => 'qris',
                     ]),
@@ -361,8 +355,6 @@ class OrderResource extends Resource
                 SelectFilter::make('payment_method')
                     ->label('Metode Pembayaran')
                     ->options([
-                        'whatsapp-order' => 'Pesan via WhatsApp',
-                        'bank-transfer' => 'Transfer Bank',
                         'cod' => 'Bayar di Tempat',
                         'qris' => 'QRIS',
                     ]),

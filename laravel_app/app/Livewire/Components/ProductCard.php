@@ -63,23 +63,6 @@ class ProductCard extends Component
         $this->dispatch('$refresh');
     }
 
-    public function orderViaWhatsApp()
-    {
-        $message = "🛍️ *MINAT PRODUK DARI CISMART*\n\n".
-            "Halo, saya tertarik dengan produk:\n\n".
-            "📦 *{$this->product->name}*\n".
-            '💰 Harga: Rp '.number_format($this->product->price, 0, ',', '.')."\n".
-            "🏪 Toko: {$this->product->shop->name}\n".
-            "📍 Lokasi: {$this->product->shop->address}\n\n".
-            "Apakah produk ini masih tersedia? Mohon informasi lebih lanjut untuk pemesanan.\n\n".
-            'Terima kasih! 🙏';
-
-        $whatsappNumber = $this->product->shop->phone ?? '6288225292279';
-        $whatsappUrl = "https://wa.me/{$whatsappNumber}?text=".urlencode($message);
-
-        return redirect()->to($whatsappUrl);
-    }
-
     public function viewShop()
     {
         return redirect()->route('shops.show', $this->product->shop->slug);
@@ -130,7 +113,7 @@ class ProductCard extends Component
             }
         }
 
-        // Final fallback
-        return asset('images/placeholder.jpg');
+        // Fallback: placeholder eksternal agar kartu tidak pecah saat gambar belum ada
+        return 'https://picsum.photos/seed/cismart-p' . $this->product->id . '/640/480';
     }
 }

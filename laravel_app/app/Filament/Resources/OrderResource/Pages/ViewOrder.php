@@ -23,7 +23,7 @@ class ViewOrder extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->modalHeading('Verifikasi pembayaran QRIS?')
-                ->modalDescription('Pastikan nominal dan bukti transfer sesuai. Pesanan akan dikonfirmasi.')
+                ->modalDescription('Pastikan nominal dan bukti pembayaran sesuai. Pesanan akan dikonfirmasi.')
                 ->visible(fn () => $this->record->isAwaitingPaymentVerification()
                     && Auth::user()?->can('verifyPayment', $this->record))
                 ->action(function () {

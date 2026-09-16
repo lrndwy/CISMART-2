@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Jalankan CISMART lokal (tanpa Docker)
 set -e
-cd "$(dirname "$0")/laravel_app"
+cd "$(dirname "$0")/../laravel_app"
 
 export PATH="/opt/homebrew/bin:$PATH"
 

@@ -49,6 +49,10 @@ class LoginPage extends Component
 
         session()->regenerate();
 
+        if (! request()->query('redirect') && Auth::user()->isSeller()) {
+            return $this->redirect(route('dashboard'), navigate: true);
+        }
+
         return $this->redirect($this->redirectTo ?: '/', navigate: true);
     }
 

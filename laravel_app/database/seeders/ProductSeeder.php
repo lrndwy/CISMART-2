@@ -46,6 +46,8 @@ class ProductSeeder extends Seeder
                     'name' => $shopName,
                     'slug' => Str::slug($shopName) . '-' . Str::random(5),
                     'description' => $shopDesc,
+                    // Toko demo: seller hasil seeder dianggap sudah disetujui admin.
+                    'status' => 'approved',
                 ]);
 
                 $this->command->info("No shop found for seller {$seller->email} — created shop '{$shop->name}'.");
