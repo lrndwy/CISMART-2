@@ -134,6 +134,7 @@ services:
       - "9090:9090"
     volumes:
       - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml
       - prometheus_data:/prometheus
     networks:
       - laravel
@@ -166,6 +167,21 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+    networks:
+      - laravel
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: cismart_node_exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+    profiles: ["monitoring"]
     networks:
       - laravel
 

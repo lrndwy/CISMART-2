@@ -1,0 +1,40 @@
+groups:
+  - name: cismart_alerts
+    rules:
+      # CRITICAL: laravel_app down
+      - alert: LaravelAppDown
+        expr: absent(container_last_seen{name="laravel_app"})
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Laravel App DOWN"
+          description: "Container laravel_app tidak terdeteksi lebih dari 1 menit."
+
+      # WARNING: ML Service error rate tinggi
+      - alert: MLServiceHighErrorRate
+        expr: rate(http_requests_total{http_status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 ML Service Error Rate Tinggi"
+          description: "Lebih dari 10% request ML Service gagal dalam 5 menit terakhir."
+
+      # WARNING: Memory container > 80%
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name=~"laravel_app|cismart_ml_service"} / container_spec_memory_limit_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Memory Usage Tinggi"
+          description: "Container {{ $labels.name }} menggunakan lebih dari 80% memory limit."
+
+      # INFO: Model berhasil di-train
+      - alert: MLModelTrained
+        expr: increase(http_requests_total{endpoint="/api/train", http_status="200"}[1h]) > 0
+        labels:
+          severity: info
+        annotations:
+          summary: "🔵 ML Model Baru Ditraining"

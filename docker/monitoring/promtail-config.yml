@@ -9,13 +9,53 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-- job_name: docker
-  docker_sd_configs:
-    - host: unix:///var/run/docker.sock
-      refresh_interval: 5s
-  relabel_configs:
-    - source_labels: ['__meta_docker_container_name']
-      regex: '/(.*)'
-      target_label: 'container'
-    - source_labels: ['__meta_docker_container_log_stream']
-      target_label: 'stream'
+  - job_name: docker_containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Label: nama container
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)' 
+        target_label: container
+      # Label: nama image/service
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+      # Label: stream (stdout/stderr)
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: stream
+
+    pipeline_stages:
+      # STAGE 1: Coba parse sebagai JSON (untuk Laravel & ML Service)
+      - json:
+          expressions:
+            level:    'level'       # Laravel JSON: "level": "ERROR"
+            levelname: 'levelname'  # Python JSON:  "levelname": "ERROR"
+            message:  'message'
+            context:  'context'
+
+      # STAGE 2: Normalisasi nama field level (Python pakai 'levelname', Laravel pakai 'level')
+      - template:
+          source: level
+          template: '{{ if .levelname }}{{ .levelname }}{{ else }}{{ .level }}{{ end }}'
+
+      # STAGE 3: Regex fallback untuk log plain-text lama (Apache, dll)
+      - regex:
+          expression: '.*\[(?P<level_text>notice|warn|error|crit|alert|emerg)\].*'
+          source: ''
+
+      # STAGE 4: Normalisasi level ke uppercase
+      - template:
+          source: level
+          template: '{{ ToUpper .Value }}'
+
+      # STAGE 5: Jika masih kosong, set sebagai INFO
+      - template:
+          source: level
+          template: '{{ if eq .Value "" }}INFO{{ else }}{{ .Value }}{{ end }}'
+
+      # STAGE 6: Jadikan 'level' sebagai label Loki
+      - labels:
+          level:
+          container:
+          service:

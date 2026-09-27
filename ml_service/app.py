@@ -16,8 +16,23 @@ from ml_engine import UMKMClusteringEngine
 from validators import validate_umkm_input, validate_batch_input
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
+import logging
+from pythonjsonlogger import jsonlogger
+
 app = Flask(__name__)
 CORS(app)
+
+# Setup structured JSON logging
+handler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%dT%H:%M:%S'
+)
+handler.setFormatter(formatter)
+
+app.logger.handlers.clear()
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.DEBUG)
 
 # Prometheus Metrics
 REQUEST_COUNT = Counter(
