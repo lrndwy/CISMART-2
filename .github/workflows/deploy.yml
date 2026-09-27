@@ -52,6 +52,9 @@ jobs:
             # Menyiapkan file .env untuk Laravel & Docker Compose
             echo "Menyimpan .env untuk Laravel..."
             echo "${{ secrets.LARAVEL_ENV }}" > "${{ secrets.LARAVEL_DIR }}/.env"
+            
+            # Perbaikan Otomatis: Tambahkan kutip ganda pada nama aplikasi jika tidak ada
+            sed -i 's/^APP_NAME=.*CISMART 2.*/APP_NAME="CISMART 2"/g' "${{ secrets.LARAVEL_DIR }}/.env"
 
             echo "Menyiapkan environment variables untuk Docker Compose..."
             cat <<EOF > .env.deploy
