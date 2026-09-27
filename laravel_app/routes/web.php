@@ -46,3 +46,5 @@ Route::get('/test-signed', function (Request $req) {
 Route::get('/make-test-url', function () {
     return URL::temporarySignedRoute('test.signed', now()->addMinutes(5));
 });
+
+Route::view('/offline', 'offline')->name('offline');

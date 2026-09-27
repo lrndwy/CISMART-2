@@ -29,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->favicon(asset('logo-nobg.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])
