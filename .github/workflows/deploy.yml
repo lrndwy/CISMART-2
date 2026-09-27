@@ -39,8 +39,8 @@ jobs:
             if [ -d "$DIR/.git" ]; then
               cd "$DIR"
               git remote set-url origin $REPO
-              git reset --hard HEAD
-              git pull origin $BRANCH
+              git fetch origin
+              git reset --hard origin/$BRANCH
             else
               rm -rf "$DIR"
               git clone --branch $BRANCH $REPO $DIR
