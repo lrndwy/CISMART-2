@@ -1,0 +1,164 @@
+name: Deploy Laravel to VPS
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  deploy:
+    name: CI/CD to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+
+            REPO="https://${{ secrets.GIT_TOKEN }}@github.com/adrianramadhan/CISMart.git"
+            DIR="${{ secrets.VPS_PATH }}"
+            CONTAINER="laravel_app"
+            BRANCH="master"
+
+            # Pengecekan dependensi (Git & Docker) - tidak ada perubahan
+            echo "Cek git, docker, dan docker compose..."
+            if ! command -v git &>/dev/null; then sudo apt-get update && sudo apt-get install -y git; fi
+            if ! command -v docker &>/dev/null; then curl -fsSL https://get.docker.com | sh; sudo usermod -aG docker $USER; fi
+            if ! docker compose version &>/dev/null; then mkdir -p ~/.docker/cli-plugins; curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose; chmod +x ~/.docker/cli-plugins/docker-compose; fi
+
+            # Logika clone/pull - tidak ada perubahan
+            echo "Clone atau pull repo..."
+            if [ -d "$DIR/.git" ]; then
+              cd "$DIR"
+              git reset --hard HEAD
+              git pull origin $BRANCH
+            else
+              rm -rf "$DIR"
+              git clone --branch $BRANCH $REPO $DIR
+              cd "$DIR"
+            fi
+
+            echo "Sekarang berada di direktori: $(pwd)"
+
+            # Menyiapkan file .env untuk Laravel & Docker Compose
+            echo "Menyimpan .env untuk Laravel..."
+            echo "${{ secrets.LARAVEL_ENV }}" > "${{ secrets.LARAVEL_DIR }}/.env"
+
+            echo "Menyiapkan environment variables untuk Docker Compose..."
+            cat <<EOF > .env.deploy
+            APP_PORT=${{ secrets.APP_PORT }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOF
+
+            # --- ALUR DEPLOYMENT BARU YANG LEBIH BAIK ---
+
+            echo "Mematikan servis yang sedang berjalan..."
+            docker compose down
+
+            echo "Membangun dan menjalankan servis baru di background..."
+            docker compose --env-file .env.deploy up -d --build
+
+            echo "Menunggu ML service siap (hingga 2 menit)..."
+            for i in {1..60}; do
+              if docker compose exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
+                echo "✅ ML service ready!"
+                break
+              fi
+              echo "   Waiting for ML service... ($i/60)"
+              sleep 2
+            done
+
+            # Check jika ML service masih belum ready setelah 2 menit
+            if ! docker compose exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
+              echo "⚠️  ML service belum ready setelah 2 menit"
+              echo "Logs ML service:"
+              docker compose logs ml_service
+              echo "Melanjutkan deployment tanpa ML service..."
+            fi
+
+            echo "Menjalankan tugas setup Laravel menggunakan container sementara..."
+
+            # Menginstall dependensi Composer
+            docker compose run --rm app composer install --optimize-autoloader --no-dev
+
+            # Menjalankan migrasi database
+            docker compose run --rm app php artisan migrate --force
+
+            # Membuat user Filament (jika diperlukan)
+            docker compose run --rm app php artisan make:filament-user --name="laurasari" --email="laurasari@pnc.ac.id" --password="password" || echo "User mungkin sudah ada, lanjutkan."
+
+            # Mengoptimalkan aplikasi untuk production
+            docker compose run --rm app php artisan config:cache
+            docker compose run --rm app php artisan route:cache
+            docker compose run --rm app php artisan view:cache
+            docker compose run --rm app php artisan filament:optimize
+
+            # === TRAIN ML MODEL OTOMATIS ===
+            echo ""
+            echo "🤖 Training ML Model..."
+
+            # Check apakah training data ada
+            if [ -f "ml_service/combined_training_data.xlsx" ]; then
+              echo "✅ Training data found: combined_training_data.xlsx"
+              
+              # Copy training data ke container
+              docker cp ml_service/combined_training_data.xlsx cismart_ml_service:/app/combined_training_data.xlsx
+              
+              # Train model di dalam container
+              echo "📤 Uploading and training model (this may take 30-60 seconds)..."
+              docker exec cismart_ml_service bash -c "
+                curl -X POST -F 'file=@/app/combined_training_data.xlsx' \
+                  http://localhost:5000/api/train \
+                  --max-time 300 \
+                  --silent \
+                  --show-error \
+                  --write-out '\nHTTP Status: %{http_code}\n' || echo 'Training request failed'
+              "
+              
+              # Verify model trained
+              echo "🔍 Verifying model status..."
+              MODEL_STATUS=$(docker exec cismart_ml_service curl -s http://localhost:5000/api/model-info | grep -o '"models_loaded":[^,]*' || echo '"models_loaded":false')
+              
+              if echo "$MODEL_STATUS" | grep -q "true"; then
+                echo "✅ ML Model trained successfully!"
+              else
+                echo "⚠️  Model training may have failed. Check logs:"
+                docker compose logs --tail 50 ml_service
+              fi
+            else
+              echo "⚠️  Training data not found: ml_service/combined_training_data.xlsx"
+              echo "   Model will remain untrained. Upload training data manually:"
+              echo "   curl -X POST -F 'file=@data.xlsx' https://your-domain.com:5000/api/train"
+            fi
+
+            # Restart container app utama agar berjalan dengan state yang bersih
+            echo ""
+            echo "🔄 Restarting application container..."
+            docker compose restart app
+
+            echo ""
+            echo "================================================"
+            echo "✅ Deployment selesai! 🎉"
+            echo "================================================"
+            echo ""
+            echo "📊 Container Status:"
+            docker compose ps
+            echo ""
+            echo "🌐 Service URLs:"
+            echo "   - Laravel App: http://$(hostname -I | awk '{print $1}'):${{ secrets.APP_PORT }}"
+            echo "   - ML Service: http://$(hostname -I | awk '{print $1}'):5000"
+            echo ""
+            echo "🔍 Check ML Model Status:"
+            echo "   curl http://localhost:5000/api/model-info"
+            echo "================================================"
