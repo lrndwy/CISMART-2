@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     container_name: laravel_app
-    # volumes:
-    #   - ./laravel_app:/var/www/html
+    volumes:
+      - ./laravel_app/.env:/var/www/html/.env
     ports:
       - "${APP_PORT:-8000}:80" # akses dari host => localhost:8000 (ubah bila perlu)
     environment:
