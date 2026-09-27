@@ -18,7 +18,7 @@ RUN npm run build \
 
 
 # ---- STAGE 2: Final Production Image ----
-FROM php:8.3-apache-bookworm
+FROM php:8.4-apache-bookworm
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
