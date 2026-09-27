@@ -38,6 +38,7 @@ jobs:
             echo "Clone atau pull repo..."
             if [ -d "$DIR/.git" ]; then
               cd "$DIR"
+              git remote set-url origin $REPO
               git reset --hard HEAD
               git pull origin $BRANCH
             else
