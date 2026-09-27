@@ -65,14 +65,14 @@ jobs:
             # --- ALUR DEPLOYMENT BARU YANG LEBIH BAIK ---
 
             echo "Mematikan servis yang sedang berjalan..."
-            docker compose down
+            docker compose --env-file .env.deploy down -v
 
             echo "Membangun dan menjalankan servis baru di background..."
             docker compose --profile ml --env-file .env.deploy up -d --build
 
             echo "Menunggu ML service siap (hingga 2 menit)..."
             for i in {1..60}; do
-              if docker compose exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
+              if docker compose --env-file .env.deploy exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
                 echo "✅ ML service ready!"
                 break
               fi
@@ -81,29 +81,29 @@ jobs:
             done
 
             # Check jika ML service masih belum ready setelah 2 menit
-            if ! docker compose exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
+            if ! docker compose --env-file .env.deploy exec -T ml_service curl -f http://localhost:5000/health 2>/dev/null; then
               echo "⚠️  ML service belum ready setelah 2 menit"
               echo "Logs ML service:"
-              docker compose logs ml_service
+              docker compose --env-file .env.deploy logs ml_service
               echo "Melanjutkan deployment tanpa ML service..."
             fi
 
             echo "Menjalankan tugas setup Laravel menggunakan container sementara..."
 
             # Menginstall dependensi Composer
-            docker compose run --rm app composer install --optimize-autoloader --no-dev
+            docker compose --env-file .env.deploy run --rm app composer install --optimize-autoloader --no-dev
 
             # Menjalankan migrasi database
-            docker compose run --rm app php artisan migrate --force
+            docker compose --env-file .env.deploy run --rm app php artisan migrate --force
 
             # Membuat user Filament (jika diperlukan)
-            docker compose run --rm app php artisan make:filament-user --name="laurasari" --email="laurasari@pnc.ac.id" --password="password" || echo "User mungkin sudah ada, lanjutkan."
+            docker compose --env-file .env.deploy run --rm app php artisan make:filament-user --name="laurasari" --email="laurasari@pnc.ac.id" --password="password" || echo "User mungkin sudah ada, lanjutkan."
 
             # Mengoptimalkan aplikasi untuk production
-            docker compose run --rm app php artisan config:cache
-            docker compose run --rm app php artisan route:cache
-            docker compose run --rm app php artisan view:cache
-            docker compose run --rm app php artisan filament:optimize
+            docker compose --env-file .env.deploy run --rm app php artisan config:cache
+            docker compose --env-file .env.deploy run --rm app php artisan route:cache
+            docker compose --env-file .env.deploy run --rm app php artisan view:cache
+            docker compose --env-file .env.deploy run --rm app php artisan filament:optimize
 
             # === TRAIN ML MODEL OTOMATIS ===
             echo ""
@@ -135,7 +135,7 @@ jobs:
                 echo "✅ ML Model trained successfully!"
               else
                 echo "⚠️  Model training may have failed. Check logs:"
-                docker compose logs --tail 50 ml_service
+                docker compose --env-file .env.deploy logs --tail 50 ml_service
               fi
             else
               echo "⚠️  Training data not found: ml_service/combined_training_data.xlsx"
@@ -146,7 +146,7 @@ jobs:
             # Restart container app utama agar berjalan dengan state yang bersih
             echo ""
             echo "🔄 Restarting application container..."
-            docker compose restart app
+            docker compose --env-file .env.deploy restart app
 
             # Bersihkan cache Docker (images lama/dangling) agar disk VPS tidak penuh
             echo ""
@@ -159,12 +159,13 @@ jobs:
             echo "================================================"
             echo ""
             echo "📊 Container Status:"
-            docker compose ps
+            docker compose --env-file .env.deploy ps
             echo ""
             echo "🌐 Service URLs:"
             echo "   - Laravel App: http://$(hostname -I | awk '{print $1}'):${{ secrets.APP_PORT }}"
             echo "   - ML Service: http://$(hostname -I | awk '{print $1}'):5000"
             echo ""
+            echo "🔍 Check ML Model Status:"
             echo "🔍 Check ML Model Status:"
             echo "   curl http://localhost:5000/api/model-info"
             echo "================================================"
