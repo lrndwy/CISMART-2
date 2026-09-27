@@ -3,19 +3,49 @@ CISMART ML Service - UMKM Growth Forecasting & Stratification System
 Penelitian: PDP Dosen Pemula - 166PL43AL.04 2025
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
 import joblib
 import os
+import time
 from datetime import datetime
 import traceback
 from ml_engine import UMKMClusteringEngine
 from validators import validate_umkm_input, validate_batch_input
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
 CORS(app)
+
+# Prometheus Metrics
+REQUEST_COUNT = Counter(
+    'http_requests_total', 'Total HTTP requests',
+    ['method', 'endpoint', 'http_status']
+)
+REQUEST_LATENCY = Histogram(
+    'http_request_duration_seconds', 'HTTP request duration',
+    ['method', 'endpoint']
+)
+
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+
+@app.after_request
+def after_request(response):
+    if hasattr(request, 'start_time'):
+        latency = time.time() - request.start_time
+        # Use request.url_rule to get the parameterized route if available
+        endpoint = request.url_rule.rule if request.url_rule else request.path
+        REQUEST_LATENCY.labels(request.method, endpoint).observe(latency)
+        REQUEST_COUNT.labels(request.method, endpoint, response.status_code).inc()
+    return response
+
+@app.route('/metrics', methods=['GET'])
+def metrics():
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
