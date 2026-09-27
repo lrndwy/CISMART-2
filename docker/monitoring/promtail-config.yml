@@ -26,35 +26,50 @@ scrape_configs:
         target_label: stream
 
     pipeline_stages:
-      # STAGE 1: Coba parse sebagai JSON (untuk Laravel & ML Service)
+      # STAGE 1: Parse JSON (Laravel structured log & Apache JSON log)
       - json:
           expressions:
-            level:    'level'       # Laravel JSON: "level": "ERROR"
-            levelname: 'levelname'  # Python JSON:  "levelname": "ERROR"
-            message:  'message'
-            context:  'context'
+            level:      'level'       # Laravel: {"level":"ERROR"}
+            levelname:  'levelname'   # Python:  {"levelname":"ERROR"}
+            http_status: 'status'     # Apache:  {"status":200}
+            message:    'message'
 
-      # STAGE 2: Normalisasi nama field level (Python pakai 'levelname', Laravel pakai 'level')
+      # STAGE 2: Normalisasi level dari Python vs Laravel
       - template:
           source: level
           template: '{{ if .levelname }}{{ .levelname }}{{ else }}{{ .level }}{{ end }}'
 
-      # STAGE 3: Regex fallback untuk log plain-text lama (Apache, dll)
+      # STAGE 3: Mapping HTTP status code → level
+      - template:
+          source: level
+          template: |
+            {{- if eq .Value "" -}}
+              {{- if .http_status -}}
+                {{- $s := .http_status | int -}}
+                {{- if ge $s 500 -}}ERROR
+                {{- else if ge $s 400 -}}WARNING
+                {{- else if ge $s 300 -}}INFO
+                {{- else -}}INFO
+                {{- end -}}
+              {{- end -}}
+            {{- else -}}{{- .Value -}}{{- end -}}
+
+      # STAGE 4: Regex fallback untuk Apache Error Log (format lama)
       - regex:
-          expression: '.*\[(?P<level_text>notice|warn|error|crit|alert|emerg)\].*'
+          expression: '\[(?P<apache_level>notice|warn|error|crit|alert|emerg)\]'
           source: ''
 
-      # STAGE 4: Normalisasi level ke uppercase
+      # STAGE 5: Gunakan apache_level jika level masih kosong
       - template:
           source: level
-          template: '{{ ToUpper .Value }}'
+          template: '{{ if and (eq .Value "") .apache_level }}{{ ToUpper .apache_level }}{{ else }}{{ .Value }}{{ end }}'
 
-      # STAGE 5: Jika masih kosong, set sebagai INFO
+      # STAGE 6: Uppercase normalisasi & default INFO
       - template:
           source: level
-          template: '{{ if eq .Value "" }}INFO{{ else }}{{ .Value }}{{ end }}'
+          template: '{{ if eq (ToUpper .Value) "" }}INFO{{ else }}{{ ToUpper .Value }}{{ end }}'
 
-      # STAGE 6: Jadikan 'level' sebagai label Loki
+      # STAGE 7: Set labels
       - labels:
           level:
           container:

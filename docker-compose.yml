@@ -9,6 +9,7 @@ services:
     ports:
       - "${APP_PORT:-8000}:80" # akses dari host => localhost:8000 (ubah bila perlu)
     environment:
+      LOG_CHANNEL: stderr
       DB_CONNECTION: pgsql
       DB_HOST: "postgres"
       # DB_HOST: "localhost"  # gunakan "localhost" jika database ada di host yang sama
@@ -185,6 +186,34 @@ services:
     networks:
       - laravel
 
+  wazuh_manager:
+    profiles: ["security"]
+    image: wazuh/wazuh-manager:4.10.2
+    container_name: cismart_wazuh
+    restart: unless-stopped
+    hostname: wazuh-manager
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 655360
+        hard: 655360
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    ports:
+      - "1514:1514/udp"
+      - "1515:1515"
+      - "55000:55000"
+    volumes:
+      - wazuh_data:/var/ossec/data
+      - wazuh_logs:/var/ossec/logs
+      - wazuh_etc:/var/ossec/etc
+      - ./docker/wazuh/cismart_rules.xml:/var/ossec/etc/rules/cismart_rules.xml:ro
+      - ./docker/wazuh/ossec.conf:/var/ossec/etc/ossec.conf:ro
+    networks:
+      - laravel
+
 networks:
   laravel:
 
@@ -198,3 +227,6 @@ volumes:
   loki_data:
   prometheus_data:
   grafana_data:
+  wazuh_data:
+  wazuh_logs:
+  wazuh_etc:

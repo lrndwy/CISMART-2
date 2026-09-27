@@ -1,0 +1,102 @@
+<group name="cismart,">
+
+  <!-- ============================================ -->
+  <!--  LARAVEL APPLICATION RULES                   -->
+  <!-- ============================================ -->
+
+  <!-- Level 12: SQL Injection attempt di Laravel -->
+  <rule id="100001" level="12">
+    <decoded_as>json</decoded_as>
+    <field name="message">\.sql\b|SQLSTATE|syntax error near|UNION SELECT|DROP TABLE</field>
+    <description>CISMART: Possible SQL Injection - Laravel application</description>
+    <group>sql_injection,attack,</group>
+    <mitre><id>T1190</id></mitre>
+  </rule>
+
+  <!-- Level 7: Laravel Error/Exception -->
+  <rule id="100002" level="7">
+    <decoded_as>json</decoded_as>
+    <field name="level">ERROR|CRITICAL|EMERGENCY|ALERT</field>
+    <description>CISMART: Laravel application error detected ($(level))</description>
+    <group>application_error,</group>
+  </rule>
+
+  <!-- Level 9: Laravel EMERGENCY (application crash) -->
+  <rule id="100003" level="9">
+    <decoded_as>json</decoded_as>
+    <field name="level">EMERGENCY|CRITICAL</field>
+    <description>CISMART: Laravel CRITICAL/EMERGENCY error - immediate attention needed</description>
+    <group>application_crash,</group>
+  </rule>
+
+  <!-- Level 10: Unauthorized Access (401/403) -->
+  <rule id="100004" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="message">Unauthenticated|This action is unauthorized|403|CSRF token mismatch</field>
+    <description>CISMART: Unauthorized access attempt</description>
+    <group>unauthorized_access,attack,</group>
+    <mitre><id>T1078</id></mitre>
+  </rule>
+
+  <!-- ============================================ -->
+  <!--  ML SERVICE RULES                            -->
+  <!-- ============================================ -->
+
+  <!-- Level 8: ML Training failure -->
+  <rule id="100010" level="8">
+    <decoded_as>json</decoded_as>
+    <field name="levelname">ERROR</field>
+    <field name="message">Training failed|training error|model.*error</field>
+    <description>CISMART: ML Service training failure</description>
+    <group>ml_error,</group>
+  </rule>
+
+  <!-- Level 6: ML Service Warning -->
+  <rule id="100011" level="6">
+    <decoded_as>json</decoded_as>
+    <field name="levelname">WARNING</field>
+    <description>CISMART: ML Service warning</description>
+    <group>ml_warning,</group>
+  </rule>
+
+  <!-- ============================================ -->
+  <!--  DOCKER / INFRASTRUCTURE RULES               -->
+  <!-- ============================================ -->
+
+  <!-- Level 11: Container mati mendadak -->
+  <rule id="100020" level="11">
+    <field name="action">die</field>
+    <description>CISMART: Docker container died - $(name)</description>
+    <group>container_failure,availability,</group>
+  </rule>
+
+  <!-- Level 7: Container restart -->
+  <rule id="100021" level="7">
+    <field name="action">restart</field>
+    <description>CISMART: Docker container restarted - $(name)</description>
+    <group>container_restart,</group>
+  </rule>
+
+  <!-- ============================================ -->
+  <!--  FILE INTEGRITY RULES                        -->
+  <!-- ============================================ -->
+
+  <!-- Level 12: Kode aplikasi berubah di luar waktu deploy -->
+  <rule id="100030" level="12">
+    <if_sid>550,553</if_sid>
+    <field name="file">/var/www/cismart-2/laravel_app/app</field>
+    <description>CISMART: Application code file modified - possible intrusion!</description>
+    <group>fim,attack,</group>
+    <mitre><id>T1083</id><id>T1565</id></mitre>
+  </rule>
+
+  <!-- Level 10: File .env berubah -->
+  <rule id="100031" level="15">
+    <if_sid>550,553</if_sid>
+    <field name="file">.env</field>
+    <description>CISMART: CRITICAL - .env file modified! Check immediately!</description>
+    <group>fim,credentials,attack,</group>
+    <mitre><id>T1552</id></mitre>
+  </rule>
+
+</group>
