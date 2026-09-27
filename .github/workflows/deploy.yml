@@ -65,7 +65,7 @@ jobs:
             # --- ALUR DEPLOYMENT BARU YANG LEBIH BAIK ---
 
             echo "Mematikan servis yang sedang berjalan..."
-            docker compose --env-file .env.deploy down -v
+            docker compose --env-file .env.deploy down
 
             echo "Membangun dan menjalankan servis baru di background..."
             docker compose --profile ml --env-file .env.deploy up -d --build
