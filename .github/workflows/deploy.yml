@@ -23,7 +23,7 @@ jobs:
           script: |
             set -e
 
-            REPO="https://${{ secrets.GIT_TOKEN }}@github.com/adrianramadhan/CISMart.git"
+            REPO="https://${{ secrets.GIT_TOKEN }}@github.com/adrianramadhan/CISMART-2.git"
             DIR="${{ secrets.VPS_PATH }}"
             CONTAINER="laravel_app"
             BRANCH="master"
