@@ -57,7 +57,6 @@ scrape_configs:
       # STAGE 4: Regex fallback untuk Apache Error Log (format lama)
       - regex:
           expression: '\[(?P<apache_level>notice|warn|error|crit|alert|emerg)\]'
-          source: ''
 
       # STAGE 5: Gunakan apache_level jika level masih kosong
       - template:
