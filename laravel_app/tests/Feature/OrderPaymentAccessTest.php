@@ -98,3 +98,13 @@ it('does not let a buyer verify their own payment', function () {
 
     expect($sellerBuyer->can('verifyPayment', $order))->toBeFalse();
 });
+
+it('does not show the raw qris payload on the payment page', function () {
+    ['sellerBuyer' => $sellerBuyer, 'order' => $order] = orderViewFixtures();
+
+    Livewire::actingAs($sellerBuyer)
+        ->test(OrderPaymentPage::class, ['order' => $order])
+        ->assertOk()
+        ->assertDontSee($order->qris_payload)
+        ->assertSee('Rp 50.000');
+});
