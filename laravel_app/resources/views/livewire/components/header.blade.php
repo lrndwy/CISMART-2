@@ -31,10 +31,10 @@
     {{-- Main bar: liquid glass --}}
     <div class="bg-white/80 backdrop-blur-xl border-b border-stone-200/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_28px_-18px_rgba(28,25,23,0.25)]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 gap-4">
+            <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
                 {{-- Brand --}}
                 <button wire:click="navigate('home')" class="shrink-0 active:scale-[0.97] transition" aria-label="Beranda CISMART">
-                    <img src="/logo-nobg.png" alt="CISMART" class="h-10 sm:h-12 w-auto">
+                    <img src="/logo-nobg.png" alt="CISMART" class="h-12 sm:h-16 w-auto">
                 </button>
 
                 {{-- Desktop nav --}}
