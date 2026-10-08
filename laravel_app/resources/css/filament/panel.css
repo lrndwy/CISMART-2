@@ -1,0 +1,16 @@
+/*
+ * Utility Tailwind untuk view panel admin.
+ *
+ * Panel Filament memuat CSS bawaannya sendiri lewat @filamentStyles, jadi di
+ * sini hanya perlu utility — tanpa preflight — supaya tidak menimpa gaya
+ * bawaan panel. Tanpa file ini, kelas utility pada view panel (mis. map picker
+ * toko) tidak punya definisi sama sekali sehingga tampil polos.
+ */
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/utilities' layer(utilities);
+
+@source '../../../../resources/views/filament';
+@source '../../../../app/Filament';
+
+/* Filament memakai strategi kelas .dark, bukan prefers-color-scheme. */
+@variant dark (&:where(.dark, .dark *));

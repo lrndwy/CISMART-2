@@ -60,6 +60,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn () => view('filament.topbar.back-to-site'),
+            )
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.panel-styles'),
             );
     }
 }
