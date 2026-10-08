@@ -90,11 +90,14 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1.5">Alamat Lengkap *</label>
-                                <textarea wire:model="address" required rows="3" class="{{ $input }}"
+                                <textarea wire:model.blur="address" required rows="3" class="{{ $input }}"
                                     placeholder="Jalan, nomor rumah, RT/RW, kelurahan, kecamatan"></textarea>
                                 @error('address')
                                     <span class="text-sm text-red-600 mt-1.5 block">{{ $message }}</span>
                                 @enderror
+                                <p class="text-xs text-stone-500 mt-1.5">
+                                    Terisi otomatis saat Anda menandai titik di peta. Bisa disunting kapan saja.
+                                </p>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,6 +175,11 @@
                                     </div>
 
                                     @include('livewire.pages.partials.checkout-delivery-map')
+
+                                    <p wire:loading wire:target="setDeliveryLocation,fillAddressFromMap"
+                                        class="text-sm text-stone-500">
+                                        Membaca alamat dari titik peta…
+                                    </p>
 
                                     @error('deliveryLatitude')
                                         <span class="text-sm text-red-600 mt-1.5 block">{{ $message }}</span>

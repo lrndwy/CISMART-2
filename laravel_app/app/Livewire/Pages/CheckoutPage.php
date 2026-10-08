@@ -9,6 +9,7 @@ use App\Models\Shop;
 use App\Services\DeliveryCostCalculator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Component;
 
 class CheckoutPage extends Component
@@ -33,6 +34,12 @@ class CheckoutPage extends Component
     public ?string $deliveryLatitude = null;
 
     public ?string $deliveryLongitude = null;
+
+    /** Alamat belum pernah disunting manual oleh pembeli. */
+    public bool $addressIsUntouched = true;
+
+    /** Alamat yang terpasang sekarang berasal dari titik peta. */
+    public bool $addressFromMap = false;
 
     // Payment & Shipping
     public string $paymentMethod = '';
@@ -141,6 +148,144 @@ class CheckoutPage extends Component
     {
         $this->deliveryLatitude = number_format((float) $latitude, 8, '.', '');
         $this->deliveryLongitude = number_format((float) $longitude, 8, '.', '');
+
+        // Alamat ikut terisi otomatis selama pembeli belum menyuntingnya sendiri.
+        if ($this->addressIsUntouched || $this->addressFromMap) {
+            $this->fillAddressFromMap(silent: true);
+        }
+    }
+
+    public function updatedAddress(): void
+    {
+        // Pembeli menulis sendiri: berhenti menimpa alamatnya dari titik peta.
+        $this->addressIsUntouched = false;
+        $this->addressFromMap = false;
+    }
+
+    /**
+     * Isi alamat lengkap dari titik peta yang sedang dipilih.
+     */
+    public function fillAddressFromMap(bool $silent = false): void
+    {
+        if (blank($this->deliveryLatitude) || blank($this->deliveryLongitude)) {
+            return;
+        }
+
+        $latitude = (float) $this->deliveryLatitude;
+        $longitude = (float) $this->deliveryLongitude;
+
+        $address = $this->reverseGeocode($latitude, $longitude);
+
+        if (blank($address)) {
+            if (! $silent) {
+                $this->dispatch('notify', [
+                    'message' => 'Alamat tidak bisa dibaca otomatis. Silakan isi manual.',
+                    'type' => 'info',
+                ]);
+            }
+
+            return;
+        }
+
+        $this->address = $address;
+        $this->addressFromMap = true;
+        $this->addressIsUntouched = false;
+    }
+
+    /**
+     * Terjemahkan koordinat menjadi alamat lewat Nominatim (OpenStreetMap).
+     * Kegagalan layanan tidak boleh memblokir checkout — pembeli tetap bisa
+     * menulis alamat manual.
+     */
+    protected function reverseGeocode(float $latitude, float $longitude): string
+    {
+        try {
+            $response = Http::withHeaders(['User-Agent' => 'CISMART/1.0 (+https://cismart.id)'])
+                ->timeout(6)
+                ->get('https://nominatim.openstreetmap.org/reverse', [
+                    'format' => 'jsonv2',
+                    'lat' => $latitude,
+                    'lon' => $longitude,
+                    'zoom' => 18,
+                    'addressdetails' => 1,
+                ]);
+
+            $address = $response->successful() ? $response->json('address') : null;
+        } catch (\Throwable) {
+            $address = null;
+        }
+
+        if (! is_array($address)) {
+            return '';
+        }
+
+        return implode(', ', $this->composeAddress($address));
+    }
+
+    /**
+     * Susun alamat dari paling spesifik ke paling umum, tanpa bagian berulang.
+     * Data Nominatim untuk Indonesia sering mengisi "city" dengan level di
+     * bawah kota ("Kelurahan X Kecamatan Y" / "Kelurahan X, Cilacap") — kalau
+     * begitu pakai county sebagai kabupaten/kota.
+     *
+     * @param  array<string, mixed>  $address
+     * @return list<string>
+     */
+    protected function composeAddress(array $address): array
+    {
+        $city = $address['municipality'] ?? $address['city'] ?? $address['town'] ?? null;
+
+        if (is_string($city) && preg_match('/kelurahan|kecamatan|desa/i', $city)) {
+            $city = null;
+        }
+
+        $candidates = [
+            trim(($address['road'] ?? '').' '.($address['house_number'] ?? '')),
+            $address['neighbourhood'] ?? null,
+            $address['village'] ?? null,
+            $address['suburb'] ?? null,
+            $address['city_district'] ?? $address['district'] ?? null,
+            $city,
+            $address['county'] ?? null,
+            $address['postcode'] ?? null,
+        ];
+
+        $parts = [];
+        $used = [];
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+
+            $candidate = trim($candidate);
+            $tokens = $this->significantTokens($candidate);
+
+            // Lewati bagian yang tidak menambah informasi baru, mis. kelurahan
+            // yang sudah terkandung di nama RW.
+            if ($tokens ===[] || array_diff($tokens, $used) === []) {
+                continue;
+            }
+
+            $parts[] = $candidate;
+            $used = array_merge($used, $tokens);
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Kata kunci alamat yang tidak membedakan satu tempat dengan tempat lain.
+     *
+     * @return list<string>
+     */
+    protected function significantTokens(string $value): array
+    {
+        $tokens = preg_split('/[^a-z0-9]+/', mb_strtolower($value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_diff($tokens, [
+            'rw', 'rt', 'kelurahan', 'kecamatan', 'desa', 'kel', 'kec', 'jalan', 'jl', 'gang', 'gg',
+        ]));
     }
 
     public function submitPayment()
