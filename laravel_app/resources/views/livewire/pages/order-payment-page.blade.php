@@ -53,8 +53,6 @@
                         <p class="text-xs text-stone-500 mt-2">Masukkan nominal ini saat scan QR statis.</p>
                     @endif
                 </div>
-
-                <p class="text-xs text-stone-400 break-all font-mono leading-relaxed">{{ $qrisPayload }}</p>
             </div>
 
             <div class="space-y-6">

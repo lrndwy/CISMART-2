@@ -55,6 +55,7 @@ class SellerApplicationsSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $seller1->assignRole('seller');
 
         // Hapus seluruh data demo lama (opsional) agar idempotent saat seeding ulang
         // Comment / hapus jika tidak diinginkan
@@ -102,6 +103,7 @@ class SellerApplicationsSeeder extends Seeder
                 'approved_by' => $admin->id,
             ]
         );
+        $buyer2->assignRole('seller');
 
         // 3) Rejected application (new demo user)
         $applicant = User::firstOrCreate(

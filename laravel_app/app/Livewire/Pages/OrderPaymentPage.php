@@ -79,7 +79,6 @@ class OrderPaymentPage extends Component
 
         return view('livewire.pages.order-payment-page', [
             'qrDataUri' => $this->renderQrDataUri($payload),
-            'qrisPayload' => $payload,
         ]);
     }
 

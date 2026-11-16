@@ -16,8 +16,16 @@
             <span x-show="!locating">Gunakan lokasi saya</span>
             <span x-show="locating">Membaca lokasi...</span>
         </button>
+        <button type="button" @click="$wire.fillAddressFromMap()"
+            class="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:border-green-700 hover:text-green-800 active:scale-[0.98] transition">
+            Isi alamat dari titik
+        </button>
         <p class="self-center text-xs text-stone-500">Atau klik peta, lalu geser pin.</p>
     </div>
+
+    <p class="text-xs text-stone-500">
+        Alamat lengkap pada formulir terisi otomatis dari titik yang Anda pilih. Geser pin bila titiknya kurang tepat.
+    </p>
 
     <p x-show="locateError" x-text="locateError" class="text-sm text-red-600"></p>
 

@@ -85,6 +85,8 @@ Route::view('/syarat-ketentuan', 'legal.terms', ['title' => 'Syarat & Ketentuan 
 Route::view('/perjanjian-penjual', 'legal.seller-agreement', ['title' => 'Perjanjian Penjual — CISMART'])
     ->name('legal.seller-agreement');
 
+Route::view('/offline', 'offline')->name('offline');
+
 // Rute alat bantu pengujian tanda tangan: hanya tersedia di lingkungan lokal.
 if (app()->environment('local')) {
     Route::get('/test-signed', function (Illuminate\Http\Request $req) {

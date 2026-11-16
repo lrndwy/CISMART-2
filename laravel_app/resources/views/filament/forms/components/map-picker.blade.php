@@ -8,6 +8,7 @@
     isSearching: false,
     searchQuery: '',
     searchResults: [],
+    searchDone: false,
     locateError: '',
 
     init() {
@@ -29,7 +30,7 @@
             this.marker = null;
         }
 
-        // DEFAULT COORDINATES FOR CILACAP
+        // Koordinat default: pusat kota Cilacap.
         const defaultLat = -7.7181;
         const defaultLng = 109.0181;
         const defaultZoom = 13;
@@ -47,7 +48,7 @@
 
             this.marker = L.marker([lat, lng], {
                 draggable: true,
-                title: 'Drag to change location'
+                title: 'Geser untuk mengubah lokasi'
             }).addTo(this.map);
 
             // Jika koordinat awal berasal dari default (belum diisi), tampilkan popup kecil
@@ -67,9 +68,9 @@
                 this.updatePosition(position.lat, position.lng);
             });
 
-            if (window.L && window.L.Control && window.L.Control.Fullscreen) {
+            if (window.L && window.L.Control && window.L.Control.FullScreen) {
                 try {
-                    this.map.addControl(new L.Control.Fullscreen({ position: 'topleft' }));
+                    this.map.addControl(new L.Control.FullScreen({ position: 'topleft' }));
                 } catch (err) {
                     console.warn('Fullscreen control error:', err);
                 }
@@ -115,6 +116,7 @@
         if (!this.searchQuery || !this.searchQuery.trim()) return;
         this.isSearching = true;
         this.searchResults = [];
+        this.searchDone = false;
 
         try {
             const q = encodeURIComponent(this.searchQuery);
@@ -123,8 +125,10 @@
             if (!response.ok) throw new Error('Geocoding request failed: ' + response.status);
             const data = await response.json();
             this.searchResults = data || [];
+            this.searchDone = true;
         } catch (error) {
             console.error('Search error:', error);
+            this.searchDone = true;
         } finally {
             this.isSearching = false;
         }
@@ -138,7 +142,14 @@
         this.updatePosition(lat, lng);
         this.searchQuery = result.display_name || this.searchQuery;
         this.searchResults = [];
+        this.searchDone = false;
         try { this.map.invalidateSize(); } catch (e) {}
+    },
+
+    clearSearch() {
+        this.searchQuery = '';
+        this.searchResults = [];
+        this.searchDone = false;
     },
 
     getCurrentLocation() {
@@ -195,91 +206,95 @@
         }
         return 'Tidak dapat mengakses lokasi. Tandai titik di peta secara manual.';
     }
-}" x-init="init()" class="space-y-3">
-    <!-- Search Box -->
-    <div class="relative">
-        <div class="flex gap-3">
-            <div class="flex-1 relative">
-                <input type="text" x-model="searchQuery" @keydown.enter.prevent="searchLocation()"
-                    placeholder="Cari lokasi (contoh: Cilacap)"
-                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition duration-75 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:opacity-70 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500" />
+}" x-init="init()" class="space-y-4">
 
-                <!-- Search Results Dropdown -->
-                <div x-show="searchResults.length > 0" x-transition
-                    class="absolute top-full left-0 right-0 z-10 mt-1 max-h-60 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
+    {{-- Pencarian lokasi --}}
+    <div class="relative">
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <div class="relative flex-1">
+                <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
+                    <x-filament::input type="text" x-model="searchQuery" x-on:keydown.enter.prevent="searchLocation()"
+                        placeholder="Cari jalan, kelurahan, atau nama tempat (contoh: Jl. Gatot Subroto Cilacap)" />
+                </x-filament::input.wrapper>
+
+                {{-- Hasil pencarian --}}
+                <div x-show="searchResults.length > 0" x-cloak x-transition.origin.top
+                    class="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-900 dark:ring-white/20">
                     <template x-for="result in searchResults" :key="result.place_id">
-                        <div @click="selectSearchResult(result)"
-                            class="border-b border-gray-200 px-4 py-2.5 cursor-pointer transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 last:border-0">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="result.display_name">
-                            </p>
-                        </div>
+                        <button type="button" x-on:click="selectSearchResult(result)"
+                            class="flex w-full items-start gap-2.5 border-b border-gray-100 px-3 py-2.5 text-left transition last:border-0 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5">
+                            <x-filament::icon icon="heroicon-m-map-pin"
+                                class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                            <span class="text-sm text-gray-950 dark:text-white" x-text="result.display_name"></span>
+                        </button>
                     </template>
                 </div>
+
+                {{-- Tidak ada hasil --}}
+                <p x-show="searchDone && searchResults.length === 0" x-cloak
+                    class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                    Lokasi tidak ditemukan. Coba kata kunci lain, atau klik langsung pada peta.
+                </p>
             </div>
 
-            <button type="button" @click="searchLocation()" :disabled="isSearching"
-                class="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition duration-75 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-70 dark:focus:ring-offset-gray-900">
-                <span x-show="!isSearching">Cari</span>
-                <span x-show="isSearching" class="inline-flex animate-spin">
-                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                </span>
-            </button>
+            <div class="flex gap-2">
+                <x-filament::button type="button" x-on:click="searchLocation()" x-bind:disabled="isSearching"
+                    icon="heroicon-m-magnifying-glass">
+                    <span x-show="!isSearching">Cari</span>
+                    <span x-show="isSearching" x-cloak>Cari…</span>
+                </x-filament::button>
 
-            <button type="button" @click="getCurrentLocation()" title="Gunakan lokasi saat ini"
-                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition duration-75 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-offset-gray-900">
-                <span class="mr-2">📍</span>
-                <span>Lokasi Saya</span>
-            </button>
+                <x-filament::button type="button" color="gray" x-on:click="getCurrentLocation()"
+                    icon="heroicon-m-map-pin">
+                    Lokasi Saya
+                </x-filament::button>
+            </div>
         </div>
 
         <p x-show="locateError" x-text="locateError" x-cloak
             class="mt-2 text-sm text-red-600 dark:text-red-400"></p>
     </div>
 
-    <!-- Map Container -->
-    <div class="relative">
+    {{-- Peta --}}
+    <div class="overflow-hidden rounded-xl ring-1 ring-gray-950/10 dark:ring-white/20">
         <div x-ref="mapContainer" id="shop-map" wire:ignore
-            class="w-full rounded-lg border border-gray-300 bg-gray-50 shadow-sm dark:border-gray-600 dark:bg-gray-800"
-            style="height: 450px; z-index: 0;"></div>
+            class="w-full bg-gray-50 dark:bg-gray-800" style="height: 420px; z-index: 0;"></div>
     </div>
 
-    <!-- Info Box -->
-    <div class="flex gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/20">
-        {{-- <svg class="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" fill="currentColor"
-            viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clip-rule="evenodd" />
-        </svg> --}}
-        <div class="flex-1 text-sm text-blue-800 dark:text-blue-300">
-            <p class="mb-2 font-semibold">Cara menggunakan peta:</p>
-            <ul class="space-y-1 text-xs">
-                <li class="flex items-start gap-2">
-                    <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">•</span>
-                    <span>Klik pada peta untuk memilih lokasi</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">•</span>
-                    <span>Drag marker (pin merah) untuk menggeser posisi</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">•</span>
-                    <span>Gunakan search box untuk mencari alamat</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">•</span>
-                    <span>Klik "Lokasi Saya" untuk menggunakan lokasi saat ini</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <span class="text-blue-600 dark:text-blue-400 flex-shrink-0">•</span>
-                    <span>Koordinat akan otomatis terisi di field Latitude dan Longitude</span>
-                </li>
+    {{-- Ringkasan titik terpilih --}}
+    <div
+        class="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-gray-50 px-4 py-3 text-sm ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10">
+        <span class="flex items-center gap-1.5">
+            <span class="text-gray-500 dark:text-gray-400">Latitude</span>
+            <span class="font-mono font-medium text-gray-950 dark:text-white"
+                x-text="latitude ? latitude : 'belum dipilih'"></span>
+        </span>
+        <span class="flex items-center gap-1.5">
+            <span class="text-gray-500 dark:text-gray-400">Longitude</span>
+            <span class="font-mono font-medium text-gray-950 dark:text-white"
+                x-text="longitude ? longitude : 'belum dipilih'"></span>
+        </span>
+        <x-filament::badge x-show="latitude && longitude" x-cloak color="success" icon="heroicon-m-check-circle"
+            class="ml-auto">
+            Lokasi sudah ditandai
+        </x-filament::badge>
+        <x-filament::badge x-show="!latitude || !longitude" x-cloak color="warning" icon="heroicon-m-exclamation-triangle"
+            class="ml-auto">
+            Belum ada lokasi
+        </x-filament::badge>
+    </div>
+
+    {{-- Petunjuk --}}
+    <div class="flex gap-3 rounded-xl bg-gray-50 p-4 ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10">
+        <x-filament::icon icon="heroicon-m-information-circle"
+            class="mt-0.5 h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" />
+        <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <p class="font-semibold">Cara menentukan lokasi toko</p>
+            <ul class="list-inside list-disc space-y-0.5 text-xs">
+                <li>Klik pada peta untuk menaruh pin, atau geser pin merah ke titik yang tepat.</li>
+                <li>Gunakan kolom pencarian bila Anda hanya tahu nama jalan atau daerahnya.</li>
+                <li>Nilai Latitude dan Longitude di bawah peta ikut terisi otomatis.</li>
+                <li>Lokasi ini dipakai pembeli sebagai titik awal perhitungan ongkir.</li>
             </ul>
         </div>
     </div>

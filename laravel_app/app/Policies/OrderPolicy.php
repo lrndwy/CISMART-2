@@ -24,18 +24,23 @@ class OrderPolicy
      */
     public function view(User $user, Order $order): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
+        // Kepemilikan dicek lebih dulu. Satu akun bisa berperan buyer + seller,
+        // dan penjual yang berbelanja di toko lain tidak memiliki produk pada
+        // pesanan tersebut — tanpa cek ini halaman pembayarannya ditolak.
+        return $user->id === $order->user_id
+            || $user->hasRole('admin')
+            || $this->sellsItemsIn($user, $order);
+    }
 
-        // Order kini milik satu toko: penjual pemilik toko itulah yang boleh melihat.
-        if ($user->hasRole('seller')) {
-            return $order->shop_id !== null
-                && $user->shops()->whereKey($order->shop_id)->exists();
-        }
-
-        // Users can view their own orders
-        return $user->id === $order->user_id;
+    /**
+     * Penjual berhak atas pesanan yang memuat produk dari tokonya.
+     */
+    protected function sellsItemsIn(User $user, Order $order): bool
+    {
+        return $user->hasRole('seller')
+            && $order->items()->whereHas('shop', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->exists();
     }
 
     /**
@@ -81,16 +86,10 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('seller')) {
-            return $order->shop_id !== null
-                && $user->shops()->whereKey($order->shop_id)->exists();
-        }
-
-        return false;
+        // Hanya admin dan penjual pemilik produk yang boleh mengubah pesanan.
+        // Kepemilikan pesanan saja tidak cukup di sini: verifyPayment()
+        // memakai method ini, jadi pembeli tidak boleh memverifikasi sendiri.
+        return $user->hasRole('admin') || $this->sellsItemsIn($user, $order);
     }
 
     /**

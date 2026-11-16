@@ -24,11 +24,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
       zip unzip git curl \
-      libpng-dev libjpeg-dev libonig-dev libxml2-dev libpq-dev postgresql-client \
+      libpng-dev libjpeg-dev libwebp-dev libfreetype6-dev \
+      libonig-dev libxml2-dev libpq-dev postgresql-client \
       libicu-dev libzip-dev zlib1g-dev netcat-openbsd \
- && docker-php-ext-configure gd --with-jpeg \
- && docker-php-ext-install -j"$(nproc)" gd \
- && docker-php-ext-install -j"$(nproc)" zip pdo pdo_mysql pdo_pgsql intl mbstring exif pcntl bcmath \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+ && docker-php-ext-install -j"$(nproc)" zip pdo pdo_mysql pdo_pgsql intl mbstring exif pcntl bcmath gd \
  && a2enmod rewrite \
  && rm -rf /var/lib/apt/lists/*
 
