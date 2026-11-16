@@ -18,12 +18,23 @@ class MLService
     }
 
     /**
+     * Klien HTTP ke ML service, selalu menyertakan token internal.
+     * Endpoint ML menolak permintaan tanpa token (kecuali /health).
+     */
+    protected function http(?int $timeout = null): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withHeaders(array_filter([
+            'X-Internal-Token' => config('services.ml.token'),
+        ]))->timeout($timeout ?? $this->timeout);
+    }
+
+    /**
      * Check if ML service is healthy
      */
     public function healthCheck(): array
     {
         try {
-            $response = Http::timeout(5)->get("{$this->baseUrl}/health");
+            $response = $this->http(5)->get("{$this->baseUrl}/health");
 
             if ($response->successful()) {
                 return [
@@ -54,7 +65,7 @@ class MLService
     public function getInfo(): ?array
     {
         try {
-            $response = Http::timeout(10)->get("{$this->baseUrl}/api/info");
+            $response = $this->http(10)->get("{$this->baseUrl}/api/info");
 
             if ($response->successful()) {
                 return $response->json();
@@ -75,7 +86,7 @@ class MLService
     public function trainModel(string $filePath): array
     {
         try {
-            $response = Http::timeout($this->timeout)
+            $response = $this->http()
                 ->attach('file', file_get_contents($filePath), basename($filePath))
                 ->post("{$this->baseUrl}/api/train");
 
@@ -109,7 +120,7 @@ class MLService
     public function predictSingle(array $data): array
     {
         try {
-            $response = Http::timeout($this->timeout)
+            $response = $this->http()
                 ->post("{$this->baseUrl}/api/predict", $data);
 
             if ($response->successful()) {
@@ -142,7 +153,7 @@ class MLService
     public function predictBatch(string $filePath): array
     {
         try {
-            $response = Http::timeout($this->timeout)
+            $response = $this->http()
                 ->attach('file', file_get_contents($filePath), basename($filePath))
                 ->post("{$this->baseUrl}/api/predict-batch");
 
@@ -176,7 +187,7 @@ class MLService
     public function getModelInfo(): ?array
     {
         try {
-            $response = Http::timeout(10)->get("{$this->baseUrl}/api/model-info");
+            $response = $this->http(10)->get("{$this->baseUrl}/api/model-info");
 
             if ($response->successful()) {
                 return $response->json();
@@ -197,7 +208,7 @@ class MLService
     public function downloadFile(string $filename): ?string
     {
         try {
-            $response = Http::timeout($this->timeout)
+            $response = $this->http()
                 ->get("{$this->baseUrl}/api/download/{$filename}");
 
             if ($response->successful()) {

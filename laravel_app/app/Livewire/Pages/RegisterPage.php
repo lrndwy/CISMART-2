@@ -4,6 +4,7 @@ namespace App\Livewire\Pages;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -41,6 +42,18 @@ class RegisterPage extends Component
     {
         $this->validate();
 
+        // Cegah pembuatan akun massal dari satu IP.
+        $throttleKey = 'register:'.request()->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $this->addError('email', "Terlalu banyak pendaftaran dari jaringan ini. Coba lagi dalam {$seconds} detik.");
+
+            return;
+        }
+
+        RateLimiter::hit($throttleKey, 600);
+
         $user = User::create([
             'name' => $this->name,
             'email' => $this->email,
@@ -53,7 +66,13 @@ class RegisterPage extends Component
         Auth::login($user);
         session()->regenerate();
 
-        $this->dispatch('notify', ['message' => 'Akun pembeli berhasil dibuat. Selamat berbelanja!', 'type' => 'success']);
+        $user->sendEmailVerificationNotification();
+
+        $this->dispatch('notify', ['message' => 'Akun pembeli berhasil dibuat. Cek email untuk verifikasi.', 'type' => 'success']);
+
+        if (config('auth.verification.required')) {
+            return $this->redirect(route('verification.notice'), navigate: true);
+        }
 
         return $this->redirect('/', navigate: true);
     }

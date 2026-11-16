@@ -1,0 +1,8 @@
+# Secrets / konfigurasi environment lokal
+.env
+.env.*
+!.env.example
+
+# Artefak tooling lokal
+.codegraph/
+.pi/

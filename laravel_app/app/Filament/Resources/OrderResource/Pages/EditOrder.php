@@ -3,7 +3,8 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
-use Filament\Actions;
+use App\Models\Order;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,22 +12,41 @@ class EditOrder extends EditRecord
 {
     protected static string $resource = OrderResource::class;
 
-    protected function getHeaderActions(): array
+    protected ?string $pendingStatus = null;
+
+    /**
+     * Jangan tulis `status` langsung: simpan target, lalu jalankan lewat
+     * Order::transitionTo() supaya stok, sold_count, riwayat, timestamp,
+     * dan notifikasi ikut terurus.
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        return [
-            Actions\ViewAction::make(),
-            Actions\DeleteAction::make()
-                ->visible(fn() => Auth::check() && Auth::user()->isAdmin()),
-        ];
+        $target = $data['status'] ?? $this->record->status;
+        $this->pendingStatus = $target !== $this->record->status ? $target : null;
+
+        $data['status'] = $this->record->status;
+
+        unset($data['confirmed_at'], $data['cancelled_at'], $data['whatsapp_sent_at']);
+
+        return $data;
     }
 
-    public function getTitle(): string
+    protected function afterSave(): void
     {
-        return 'Edit Pesanan';
-    }
+        if ($this->pendingStatus === null) {
+            return;
+        }
 
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
+        $applied = $this->record->transitionTo($this->pendingStatus, Auth::user(), 'Diubah dari panel');
+
+        if (! $applied) {
+            Notification::make()
+                ->title('Transisi status ditolak')
+                ->body('Status tidak berubah. Pastikan pembayaran sudah terverifikasi dan transisi memang diizinkan (mis. Dikirim → Selesai).')
+                ->danger()
+                ->send();
+        }
+
+        $this->record->refresh();
     }
 }

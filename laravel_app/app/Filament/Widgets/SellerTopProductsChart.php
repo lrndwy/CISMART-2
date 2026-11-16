@@ -26,7 +26,7 @@ class SellerTopProductsChart extends ChartWidget
 
         $topProducts = OrderItem::select('product_id', 'product_name', DB::raw('SUM(subtotal) as total_sales'))
             ->whereIn('shop_id', $shopIds)
-            ->whereHas('order', fn($q) => $q->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']))
+            ->whereHas('order', fn($q) => $q->revenue())
             ->groupBy('product_id', 'product_name')
             ->orderBy('total_sales', 'desc')
             ->limit(10)

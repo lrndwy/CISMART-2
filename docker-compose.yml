@@ -17,8 +17,13 @@ services:
       DB_USERNAME: "${DB_USERNAME:-postgres}"
       DB_PASSWORD: "${DB_PASSWORD:-root}"
       APP_ENV: "${APP_ENV:-production}"
+      APP_KEY: "${APP_KEY:-}" # wajib: .dockerignore mengecualikan laravel_app/.env
+      APP_DEBUG: "${APP_DEBUG:-false}"
       APP_URL: "${APP_URL:-https://cismart.id}"
       ML_SERVICE_URL: "http://ml_service:5000"
+      ML_SERVICE_TOKEN: "${ML_SERVICE_TOKEN:-}"
+      REQUIRE_EMAIL_VERIFICATION: "${REQUIRE_EMAIL_VERIFICATION:-true}"
+      ORDER_PAYMENT_WINDOW_HOURS: "${ORDER_PAYMENT_WINDOW_HOURS:-24}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,14 +39,19 @@ services:
       context: ./ml_service
       dockerfile: Dockerfile
     container_name: cismart_ml_service
+    # Jangan diekspos ke publik: ML service tidak punya UI dan endpoint
+    # training hanya untuk internal. Produksi cukup lewat network docker.
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ml_models:/app/models
       - ml_data:/app/data
       - ml_logs:/app/logs
     environment:
       PYTHONUNBUFFERED: "1"
+      INTERNAL_TOKEN: "${ML_SERVICE_TOKEN:-}"
+      CORS_ORIGINS: "${ML_CORS_ORIGINS:-http://localhost:8000}"
+      ML_MAX_TRAINING_FILES: "${ML_MAX_TRAINING_FILES:-10}"
     networks:
       - laravel
     healthcheck:

@@ -75,6 +75,9 @@ it('registers a guest as seller application and shows pending status', function 
         ->set('business_phone', '081234567890')
         ->set('business_email', 'toko@baru.test')
         ->set('documents', [UploadedFile::fake()->image('ktp.jpg')])
+        // Plan-01: NIB dan persetujuan Perjanjian Penjual kini wajib.
+        ->set('nib_document', UploadedFile::fake()->create('nib.pdf', 200, 'application/pdf'))
+        ->set('agreement_accepted', true)
         ->call('submit')
         ->assertHasNoErrors();
 
@@ -82,8 +85,9 @@ it('registers a guest as seller application and shows pending status', function 
 
     $user = User::where('email', 'toko@baru.test')->firstOrFail();
     expect($user->hasRole('buyer'))->toBeTrue();
-    expect($user->hasRole('seller'))->toBeTrue();
-    expect($user->can('products.create'))->toBeTrue();
+    // Role seller baru diberikan saat admin menyetujui permohonan (F-13).
+    expect($user->hasRole('seller'))->toBeFalse();
+    expect($user->can('products.create'))->toBeFalse();
 
     $application = SellerApplication::where('user_id', $user->id)->firstOrFail();
     expect($application->status)->toBe('pending');
@@ -119,6 +123,9 @@ it('lets a rejected applicant resubmit and resets status to pending', function (
         ->set('business_address', 'Alamat lama')
         ->set('business_phone', '081234567890')
         ->set('business_email', $user->email)
+        // Plan-01: permohonan ini belum punya NIB dan belum ada persetujuan.
+        ->set('nib_document', UploadedFile::fake()->create('nib.pdf', 200, 'application/pdf'))
+        ->set('agreement_accepted', true)
         ->call('submit')
         ->assertHasNoErrors();
 

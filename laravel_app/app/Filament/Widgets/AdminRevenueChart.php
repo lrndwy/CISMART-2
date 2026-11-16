@@ -26,7 +26,8 @@ class AdminRevenueChart extends ChartWidget
             $endDate = now()->subWeeks($weeksAgo);
             
             $revenue = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+                // Pendapatan riil: QRIS terverifikasi atau COD yang sudah diterima.
+                ->revenue()
                 ->sum('total');
 
             return [

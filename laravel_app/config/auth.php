@@ -112,4 +112,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Wajib verifikasi email
+    |--------------------------------------------------------------------------
+    |
+    | Bila aktif, area akun (checkout, pesanan, profil) hanya bisa diakses
+    | setelah pembeli mengklik tautan verifikasi di emailnya. Set
+    | REQUIRE_EMAIL_VERIFICATION=false untuk demo lokal tanpa mail catcher.
+    |
+    */
+
+    'verification' => [
+        'required' => filter_var(env('REQUIRE_EMAIL_VERIFICATION', true), FILTER_VALIDATE_BOOL),
+    ],
+
 ];

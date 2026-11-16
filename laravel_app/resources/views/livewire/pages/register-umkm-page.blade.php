@@ -74,6 +74,21 @@
                     </div>
                 @endif
 
+                <div class="mt-6">
+                    <p class="text-sm font-medium text-stone-700 mb-2">Izin Usaha (NIB)</p>
+                    @if ($application->nib_document_path)
+                        <a href="{{ Storage::disk('public')->url($application->nib_document_path) }}" target="_blank"
+                            class="inline-flex items-center gap-1.5 text-sm text-green-700 hover:text-green-800 font-medium">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                            </svg>
+                            {{ basename($application->nib_document_path) }}
+                        </a>
+                    @else
+                        <p class="text-sm text-stone-500">Belum diunggah</p>
+                    @endif
+                </div>
+
                 <div class="mt-8 flex flex-wrap items-center gap-4">
                     @if ($application->status === 'approved')
                         <a href="{{ url('/admin') }}"
@@ -265,6 +280,60 @@
                             @error('documents.*')
                                 <p class="text-sm text-red-600 mt-1.5">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        {{-- Izin Usaha (NIB) — syarat terpisah dari dokumen pendukung --}}
+                        <div>
+                            <label for="nib-document" class="block text-sm font-medium text-stone-700 mb-1.5">Izin Usaha (NIB)</label>
+                            <input id="nib-document" type="file" wire:model="nib_document" accept="application/pdf,image/*"
+                                class="block w-full text-sm text-stone-600 rounded-lg border border-stone-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-l-lg file:border-0 file:bg-green-700 file:text-white file:text-sm file:font-medium hover:file:bg-green-800" />
+                            <p class="text-xs text-stone-400 mt-1.5">
+                                Satu file PDF, JPG, atau PNG, maksimal 5 MB — dokumen NIB dari OSS atau foto lembar cetaknya.
+                            </p>
+                            <div wire:loading wire:target="nib_document" class="text-sm text-stone-500 mt-1.5">Mengunggah...</div>
+
+                            @if ($nib_document)
+                                <p class="text-sm text-stone-700 mt-2">{{ $nib_document->getClientOriginalName() }}</p>
+                            @elseif ($this->hasStoredNib())
+                                <p class="text-sm text-stone-500 mt-2">
+                                    NIB sudah terunggah —
+                                    <a href="{{ Storage::disk('public')->url($application->nib_document_path) }}" target="_blank"
+                                        class="text-green-700 hover:text-green-800 font-medium">lihat file</a>.
+                                    Unggah file baru hanya bila ingin menggantinya.
+                                </p>
+                            @endif
+
+                            @error('nib_document')
+                                <p class="text-sm text-red-600 mt-1.5">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Persetujuan Perjanjian Penjual --}}
+                        <div class="rounded-xl border border-stone-200/70 bg-stone-50 p-4">
+                            @if ($this->hasAcceptedCurrentAgreement())
+                                <p class="text-sm text-stone-600 leading-relaxed">
+                                    Kamu sudah menyetujui
+                                    <a href="{{ route('legal.seller-agreement') }}" target="_blank" rel="noopener noreferrer"
+                                        class="text-green-700 font-medium hover:text-green-800 hover:underline">Perjanjian Penjual versi {{ $this->sellerAgreementVersion() }}</a>
+                                    @if ($acceptedAt = $this->currentAgreementAcceptance()?->accepted_at)
+                                        pada {{ $acceptedAt->translatedFormat('j F Y') }}
+                                    @endif.
+                                </p>
+                            @else
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" wire:model="agreement_accepted"
+                                        class="mt-0.5 h-4 w-4 rounded border-stone-300 text-green-700 focus:ring-2 focus:ring-green-700" />
+                                    <span class="text-sm text-stone-700 leading-relaxed">
+                                        Saya telah membaca dan menyetujui
+                                        <a href="{{ route('legal.seller-agreement') }}" target="_blank" rel="noopener noreferrer"
+                                            class="text-green-700 font-medium hover:text-green-800 hover:underline">Perjanjian Penjual versi {{ $this->sellerAgreementVersion() }}</a>
+                                        sebagai syarat membuka toko di CISMART.
+                                    </span>
+                                </label>
+                                @error('agreement_accepted')
+                                    <p class="text-sm text-red-600 mt-1.5">{{ $message }}</p>
+                                @enderror
+                            @endif
                         </div>
 
                         <p class="text-xs text-stone-500 bg-stone-50 border border-stone-200/70 rounded-lg p-3">

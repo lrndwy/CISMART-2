@@ -18,15 +18,17 @@ RUN npm run build \
 
 
 # ---- STAGE 2: Final Production Image ----
-FROM php:8.3-apache-bookworm
+FROM php:8.4-apache-bookworm
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
       zip unzip git curl \
-      libpng-dev libonig-dev libxml2-dev libpq-dev postgresql-client \
+      libpng-dev libjpeg-dev libonig-dev libxml2-dev libpq-dev postgresql-client \
       libicu-dev libzip-dev zlib1g-dev netcat-openbsd \
- && docker-php-ext-install -j"$(nproc)" zip pdo pdo_mysql pdo_pgsql intl mbstring exif pcntl bcmath gd \
+ && docker-php-ext-configure gd --with-jpeg \
+ && docker-php-ext-install -j"$(nproc)" gd \
+ && docker-php-ext-install -j"$(nproc)" zip pdo pdo_mysql pdo_pgsql intl mbstring exif pcntl bcmath \
  && a2enmod rewrite \
  && rm -rf /var/lib/apt/lists/*
 
@@ -44,6 +46,10 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
 # Baru salin kode + hasil Vite build
 COPY --from=builder /var/www/html .
 COPY docker/php/apache.conf /etc/apache2/sites-available/000-default.conf
+
+# Batas unggah PHP. Bawaan image (2M / 8M) lebih kecil dari file NIB 5 MB yang
+# diterima validasi Laravel, sehingga file yang sah akan ditolak PHP lebih dulu.
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/zz-cismart-uploads.ini
 
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache \

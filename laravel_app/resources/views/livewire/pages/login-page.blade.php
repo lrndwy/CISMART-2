@@ -31,6 +31,16 @@
                             <p class="text-sm text-red-600 mt-1.5">{{ $message }}</p>
                         @enderror
                     </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <label class="inline-flex items-center gap-2 text-sm text-stone-600">
+                            <input type="checkbox" wire:model="remember"
+                                class="h-4 w-4 rounded border-stone-300 text-green-700 focus:ring-green-700" />
+                            Ingat saya
+                        </label>
+                        <a href="{{ route('password.request') }}" class="text-sm font-medium text-green-700 hover:text-green-800">
+                            Lupa kata sandi?
+                        </a>
+                    </div>
                     <button type="submit"
                         class="w-full bg-green-700 hover:bg-green-800 text-white rounded-lg py-3 font-medium active:scale-[0.98] transition disabled:opacity-60">
                         <span wire:loading.remove wire:target="login">Masuk</span>

@@ -29,6 +29,9 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'rating' => 'decimal:2',
+        'total_reviews' => 'integer',
+        'sold_count' => 'integer',
         'images' => 'array',
         'is_featured' => 'boolean',
     ];
@@ -48,6 +51,34 @@ class Product extends Model
     public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Hitung ulang rating agregat produk dari ulasan produk.
+     */
+    public function refreshRating(): void
+    {
+        $aggregate = $this->reviews()
+            ->whereNotNull('product_id')
+            ->selectRaw('COUNT(*) as total, COALESCE(AVG(rating), 0) as average')
+            ->first();
+
+        $this->newQuery()->whereKey($this->getKey())->update([
+            'rating' => round((float) $aggregate->average, 2),
+            'total_reviews' => (int) $aggregate->total,
+        ]);
+
+        $this->refresh();
+    }
+
+    public function averageRating(): float
+    {
+        return (float) ($this->rating ?? 0);
     }
 
     public function isFavoritedBy(?User $user): bool

@@ -74,9 +74,9 @@
                         </button>
                     </li>
                     <li>
-                        <button class="hover:text-white transition-colors">
+                        <a href="{{ route('legal.terms') }}" class="hover:text-white transition-colors">
                             Syarat & Ketentuan
-                        </button>
+                        </a>
                     </li>
                     <li>
                         <button class="hover:text-white transition-colors">

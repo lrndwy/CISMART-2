@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages;
 
+use App\Models\Product;
 use Livewire\Component;
 
 class CartPage extends Component
@@ -33,14 +34,43 @@ class CartPage extends Component
     public function updateQuantity($productId, $quantity)
     {
         $cart = $this->getCart();
+        $quantity = (int) $quantity;
+
+        if (! isset($cart[$productId])) {
+            return;
+        }
 
         if ($quantity <= 0) {
             unset($cart[$productId]);
-        } else {
-            if (isset($cart[$productId])) {
-                $cart[$productId]['quantity'] = $quantity;
-            }
+            session()->put('cart', $cart);
+            $this->selectedItems = array_values(array_diff($this->selectedItems, [$productId]));
+            $this->dispatch('cart-updated');
+
+            return;
         }
+
+        $product = Product::query()->with('shop')->published()->find($productId);
+
+        if (! $product || $product->stock <= 0) {
+            unset($cart[$productId]);
+            session()->put('cart', $cart);
+            $this->selectedItems = array_values(array_diff($this->selectedItems, [$productId]));
+            $this->dispatch('cart-updated');
+            $this->dispatch('notify', [
+                'message' => 'Produk sudah tidak tersedia dan dihapus dari keranjang.',
+                'type' => 'error',
+            ]);
+
+            return;
+        }
+
+        // Kuantitas tidak boleh melebihi stok; data harga disinkronkan.
+        $quantity = min($quantity, max(1, (int) $product->stock));
+        $cart[$productId]['quantity'] = $quantity;
+        $cart[$productId]['name'] = $product->name;
+        $cart[$productId]['price'] = (float) $product->price;
+        $cart[$productId]['image'] = $product->first_image;
+        $cart[$productId]['shop_name'] = $product->shop?->name ?? ($cart[$productId]['shop_name'] ?? '');
 
         session()->put('cart', $cart);
         $this->dispatch('cart-updated');
@@ -128,6 +158,30 @@ class CartPage extends Component
 
     public function proceedToCheckout()
     {
+        // Buang produk yang sudah tidak dijual sebelum checkout.
+        $cart = $this->getCart();
+        $available = Product::query()->published()
+            ->whereIn('id', array_keys($cart))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $removed = array_diff(array_map('intval', array_keys($cart)), $available);
+
+        if ($removed !== []) {
+            foreach ($removed as $id) {
+                unset($cart[$id]);
+            }
+
+            session()->put('cart', $cart);
+            $this->selectedItems = array_values(array_intersect($this->selectedItems, $available));
+            $this->dispatch('cart-updated');
+            $this->dispatch('notify', [
+                'message' => 'Beberapa produk sudah tidak tersedia dan dihapus dari keranjang.',
+                'type' => 'error',
+            ]);
+        }
+
         if (empty($this->selectedItems)) {
             $this->dispatch('notify', [
                 'message' => 'Pilih produk yang ingin dibeli',
@@ -137,7 +191,6 @@ class CartPage extends Component
             return;
         }
 
-        // Store selected items in session for checkout
         session()->put('checkout_items', $this->selectedItems);
 
         if (! auth()->check()) {

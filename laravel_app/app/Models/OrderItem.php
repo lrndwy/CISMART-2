@@ -40,7 +40,8 @@ class OrderItem extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        // Produk bisa sudah di-soft-delete; snapshot nama tetap dipakai di UI.
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     /**

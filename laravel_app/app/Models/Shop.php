@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Shop extends Model
 {
@@ -40,6 +41,22 @@ class Shop extends Model
         'delivery_unit_meters' => 'integer',
         'delivery_rate' => 'integer',
     ];
+
+    /**
+     * Slug unik dari nama toko (dipakai saat toko dibuat otomatis dari permohonan).
+     */
+    public static function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'toko';
+        $slug = $base;
+        $suffix = 1;
+
+        while (static::query()->where('slug', $slug)->exists()) {
+            $slug = $base.'-'.(++$suffix);
+        }
+
+        return $slug;
+    }
 
     public function user(): BelongsTo
     {

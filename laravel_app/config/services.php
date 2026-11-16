@@ -38,6 +38,9 @@ return [
     'ml' => [
         'url' => env('ML_SERVICE_URL', 'http://ml_service:5000'),
         'timeout' => env('ML_SERVICE_TIMEOUT', 60),
+        // Token bersama Laravel ↔ ML service; endpoint selain /health menolak
+        // permintaan tanpa header ini.
+        'token' => env('ML_SERVICE_TOKEN'),
     ],
 
 ];

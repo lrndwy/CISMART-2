@@ -40,15 +40,13 @@ class OrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with(['user', 'items', 'items.product', 'items.shop']);
+        $query = parent::getEloquentQuery()->with(['user', 'shop', 'items', 'items.product', 'items.shop']);
 
-        // If user is seller, only show orders containing their products
+        // Penjual hanya melihat pesanan tokonya sendiri (order kini milik satu toko).
         if (Auth::check() && ! Auth::user()->isAdmin() && Auth::user()->isSeller()) {
             $userShopIds = Auth::user()->shops->pluck('id')->toArray();
 
-            $query->whereHas('items', function ($q) use ($userShopIds) {
-                $q->whereIn('shop_id', $userShopIds);
-            });
+            $query->whereIn('shop_id', $userShopIds);
         }
 
         return $query;
@@ -76,16 +74,38 @@ class OrderResource extends Resource
 
                         Select::make('status')
                             ->label('Status Pesanan')
-                            ->options([
-                                'pending' => 'Menunggu Konfirmasi',
-                                'confirmed' => 'Dikonfirmasi',
-                                'processing' => 'Diproses',
-                                'shipped' => 'Dikirim',
-                                'delivered' => 'Selesai',
-                                'cancelled' => 'Dibatalkan',
-                            ])
+                            // Hanya transisi yang sah & hanya bila pembayaran mengizinkan.
+                            // Perubahan sebenarnya dijalankan lewat Order::transitionTo().
+                            ->options(function (?Order $record): array {
+                                if (! $record) {
+                                    return [Order::STATUS_PENDING => 'Menunggu Konfirmasi'];
+                                }
+
+                                $options = [$record->status => Order::statusLabelFor($record->status)];
+
+                                foreach ($record->allowedTransitions() as $to) {
+                                    if ($record->canTransitionTo($to)) {
+                                        $options[$to] = Order::statusLabelFor($to);
+                                    }
+                                }
+
+                                return $options;
+                            })
                             ->required()
-                            ->native(false),
+                            ->native(false)
+                            ->disabled(fn (?Order $record): bool => $record === null)
+                            ->helperText(fn (?Order $record): string => $record === null
+                                ? 'Status awal pesanan selalu Menunggu Konfirmasi.'
+                                : 'Hanya transisi yang diizinkan yang ditampilkan. Bila pembayaran QRIS belum terverifikasi, status tidak bisa Dikonfirmasi.'),
+
+                        Select::make('shop_id')
+                            ->label('Toko')
+                            ->relationship('shop', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->disabled(fn (?Order $record): bool => $record !== null)
+                            ->visible(fn (): bool => (bool) Auth::user()?->isAdmin())
+                            ->helperText('Satu pesanan hanya untuk satu toko.'),
 
                         Select::make('payment_method')
                             ->label('Metode Pembayaran')
@@ -235,13 +255,18 @@ class OrderResource extends Resource
                             ->columnSpanFull(),
 
                         DateTimePicker::make('confirmed_at')
-                            ->label('Dikonfirmasi Pada'),
+                            ->label('Dikonfirmasi Pada')
+                            ->disabled()
+                            ->helperText('Diisi otomatis saat status berubah.'),
 
                         DateTimePicker::make('cancelled_at')
-                            ->label('Dibatalkan Pada'),
+                            ->label('Dibatalkan Pada')
+                            ->disabled(),
 
                         DateTimePicker::make('whatsapp_sent_at')
-                            ->label('WhatsApp Dikirim Pada'),
+                            ->label('WhatsApp Dikirim Pada')
+                            ->disabled()
+                            ->visible(false),
                     ])
                     ->columns(2),
             ]);
@@ -268,12 +293,10 @@ class OrderResource extends Resource
                     ->description(fn (Order $record): string => $record->shipping_phone)
                     ->searchable(),
 
-                TextColumn::make('items.shop.name')
+                TextColumn::make('shop.name')
                     ->label('Toko')
-                    ->listWithLineBreaks()
-                    ->limitList(2)
-                    ->expandableLimitedList()
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('items_count')
                     ->label('Jumlah Item')
@@ -375,6 +398,7 @@ class OrderResource extends Resource
     {
         return [
             RelationManagers\ItemsRelationManager::class,
+            RelationManagers\StatusHistoriesRelationManager::class,
         ];
     }
 
@@ -395,13 +419,11 @@ class OrderResource extends Resource
                 ->orWhere('payment_status', 'awaiting_verification');
         });
 
-        // If user is seller, only count orders containing their products
+        // If user is seller, only count their own shop's orders
         if (Auth::check() && ! Auth::user()->isAdmin() && Auth::user()->isSeller()) {
             $userShopIds = Auth::user()->shops->pluck('id')->toArray();
 
-            $query->whereHas('items', function ($q) use ($userShopIds) {
-                $q->whereIn('shop_id', $userShopIds);
-            });
+            $query->whereIn('shop_id', $userShopIds);
         }
 
         $count = $query->count();

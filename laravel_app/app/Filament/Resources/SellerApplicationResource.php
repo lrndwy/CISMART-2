@@ -102,6 +102,17 @@ class SellerApplicationResource extends Resource
                             ->dehydrated(false)
                             ->helperText('KTP/SIUP dan dokumen pendukung yang diunggah pendaftar.')
                             ->columnSpanFull(),
+
+                        FileUpload::make('nib_document_path')
+                            ->label('Izin Usaha (NIB)')
+                            ->disk('public')
+                            ->directory('seller-documents/nib')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->openable()
+                            ->downloadable()
+                            ->helperText('Izin usaha yang diunggah pendaftar. Buka di tab baru untuk memeriksa kesesuaiannya sebelum menyetujui.')
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                 Section::make('Review')
@@ -208,16 +219,9 @@ class SellerApplicationResource extends Resource
                     ->visible(fn(SellerApplication $record): bool => $record->isPending())
                     ->requiresConfirmation()
                     ->action(function (SellerApplication $record): void {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_at' => now(),
-                            'approved_by' => Auth::id(),
-                        ]);
-
-                        // assign role to user (pastikan relation user ada)
-                        if ($record->user) {
-                            $record->user->assignRole('seller');
-                        }
+                        // Status + pembuatan toko + pemberian role seller semuanya
+                        // ditangani satu jalur: SellerApplication::provisionShop().
+                        $record->approve(Auth::user());
 
                         Notification::make()
                             ->title('Application approved successfully')

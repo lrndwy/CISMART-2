@@ -14,7 +14,8 @@ class Header extends Component
 
     public function render()
     {
-        $cartItemCount = count(session()->get('cart', []));
+        // Hitung total kuantitas (bukan jumlah baris produk) agar badge akurat.
+        $cartItemCount = (int) array_sum(array_column(session()->get('cart', []), 'quantity'));
 
         return view('livewire.components.header', [
             'cartItemCount' => $cartItemCount,

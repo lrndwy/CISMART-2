@@ -165,12 +165,6 @@
                             <dt class="text-stone-500">Alamat</dt>
                             <dd class="text-stone-900 font-medium text-right">{{ $shop->address }}</dd>
                         </div>
-                        <div class="flex justify-between py-3">
-                            <dt class="text-stone-500">Telepon</dt>
-                            <dd class="text-stone-900 font-medium">
-                                <a href="tel:{{ $shop->phone }}" class="hover:text-green-700 transition-colors">{{ $shop->phone }}</a>
-                            </dd>
-                        </div>
                         @if ($shop->email)
                             <div class="flex justify-between py-3">
                                 <dt class="text-stone-500">Email</dt>

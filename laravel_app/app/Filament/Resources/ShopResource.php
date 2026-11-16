@@ -60,16 +60,26 @@ class ShopResource extends Resource
     public static function canCreate(): bool
     {
         $user = Auth::user();
-        // Prefer policy if exists
-        if ($user && Gate::has('create', Shop::class)) {
-            return Gate::allows('create', Shop::class);
+
+        if (! $user) {
+            return false;
         }
 
-        // Admin and sellers can create a shop. Sellers only create their own.
-        return (bool) ($user && (
-            (method_exists($user, 'isAdmin') && $user->isAdmin())
-            || (method_exists($user, 'isSeller') && $user->isSeller())
-        ));
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            return true;
+        }
+
+        // Seller hanya punya satu toko, dan tokonya dibuat otomatis saat
+        // permohonan disetujui (SellerApplication::provisionShop()). Jadi
+        // "Tambah Toko" hanya muncul bila entah bagaimana tokonya belum ada,
+        // dan itupun hanya untuk permohonan yang sudah disetujui.
+        if (method_exists($user, 'isSeller') && $user->isSeller()) {
+            // Query langsung (bukan relasi ter-cache) supaya hasilnya selalu segar.
+            return $user->sellerApplication()->where('status', 'approved')->exists()
+                && ! $user->shops()->exists();
+        }
+
+        return false;
     }
 
     public static function canEdit(Model $record): bool

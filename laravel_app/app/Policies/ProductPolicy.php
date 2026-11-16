@@ -29,8 +29,14 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        // Admin and sellers can create products
-        return $user->hasRole(['admin', 'seller']);
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Penjual hanya boleh menjual setelah permohonan disetujui & punya toko.
+        return $user->isSeller()
+            && $user->sellerApplication()->where('status', 'approved')->exists()
+            && $user->shops()->exists();
     }
 
     public function update(User $user, Product $product): bool

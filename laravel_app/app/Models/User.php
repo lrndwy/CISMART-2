@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     use HasFactory, Notifiable, HasRoles;
 
@@ -85,6 +86,25 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(SellerApplication::class);
     }
 
+    /**
+     * Bukti persetujuan dokumen legal (Perjanjian Penjual) milik user ini.
+     */
+    public function agreementAcceptances(): HasMany
+    {
+        return $this->hasMany(AgreementAcceptance::class);
+    }
+
+    /**
+     * Sudah pernah menyetujui dokumen ini pada versi tersebut?
+     */
+    public function hasAcceptedDocument(string $documentType, string $version): bool
+    {
+        return $this->agreementAcceptances()
+            ->where('document_type', $documentType)
+            ->where('version', $version)
+            ->exists();
+    }
+
     public function shops(): HasMany
     {
         return $this->hasMany(Shop::class);
@@ -99,8 +119,41 @@ class User extends Authenticatable implements FilamentUser
     {
         return OrderItem::query()
             ->where('shop_id', $shop->id)
-            ->whereHas('order', fn ($query) => $query->where('user_id', $this->id))
+            ->whereHas('order', fn ($query) => $query
+                ->where('user_id', $this->id)
+                ->where('status', Order::STATUS_DELIVERED))
             ->exists();
+    }
+
+    /**
+     * Pembeli hanya boleh mengulas produk yang benar-benar sudah diterima.
+     */
+    public function hasDeliveredProduct(Product|int $product): bool
+    {
+        $productId = $product instanceof Product ? $product->getKey() : $product;
+
+        return OrderItem::query()
+            ->where('product_id', $productId)
+            ->whereHas('order', fn ($query) => $query
+                ->where('user_id', $this->id)
+                ->where('status', Order::STATUS_DELIVERED))
+            ->exists();
+    }
+
+    /**
+     * OrderItem terakhir yang memenuhi syarat ulasan untuk produk ini.
+     */
+    public function deliveredOrderItemFor(Product|int $product): ?OrderItem
+    {
+        $productId = $product instanceof Product ? $product->getKey() : $product;
+
+        return OrderItem::query()
+            ->where('product_id', $productId)
+            ->whereHas('order', fn ($query) => $query
+                ->where('user_id', $this->id)
+                ->where('status', Order::STATUS_DELIVERED))
+            ->latest()
+            ->first();
     }
 
     public function initials(): string

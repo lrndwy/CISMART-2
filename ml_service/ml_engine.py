@@ -342,29 +342,33 @@ class UMKMClusteringEngine:
         
         return df
     
+    def _atomic_dump(self, obj, filename):
+        """Tulis ke file sementara lalu rename atomik.
+
+        Mencegah worker lain membaca model setengah tertulis saat retraining.
+        """
+        target = os.path.join(self.models_dir, filename)
+        tmp = f"{target}.tmp"
+        joblib.dump(obj, tmp)
+        os.replace(tmp, target)
+
     def _save_models(self):
-        """Save trained models to disk"""
+        """Save trained models to disk (atomik per file)"""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        
-        # Save KMeans
-        joblib.dump(self.kmeans_model, os.path.join(self.models_dir, 'kmeans_model.joblib'))
-        
-        # Save Random Forest
-        joblib.dump(self.rf_classifier, os.path.join(self.models_dir, 'rf_best_model.joblib'))
-        
-        # Save preprocessors
-        joblib.dump(self.scaler, os.path.join(self.models_dir, 'scaler.joblib'))
-        joblib.dump(self.label_encoders, os.path.join(self.models_dir, 'label_encoders.joblib'))
-        
-        # Save metadata
+
+        self._atomic_dump(self.kmeans_model, 'kmeans_model.joblib')
+        self._atomic_dump(self.rf_classifier, 'rf_best_model.joblib')
+        self._atomic_dump(self.scaler, 'scaler.joblib')
+        self._atomic_dump(self.label_encoders, 'label_encoders.joblib')
+
         metadata = {
             'feature_names': self.feature_names,
             'cluster_profiles': self.cluster_profiles,
             'model_metrics': self.model_metrics,
             'timestamp': timestamp
         }
-        joblib.dump(metadata, os.path.join(self.models_dir, 'metadata.joblib'))
-        
+        self._atomic_dump(metadata, 'metadata.joblib')
+
         print(f"\nModels saved to {self.models_dir}")
     
     def load_models(self):

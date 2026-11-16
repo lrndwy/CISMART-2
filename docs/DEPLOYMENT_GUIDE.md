@@ -109,6 +109,23 @@ docker compose run --rm app php artisan route:cache
 docker compose run --rm app php artisan filament:optimize
 ```
 
+### 2b. Batas unggah berkas (Izin Usaha / NIB)
+
+Image aplikasi membawa `docker/php/uploads.ini` dengan `upload_max_filesize=10M` dan
+`post_max_size=12M`, karena validasi Laravel menerima file NIB sampai 5 MB. Nilai ini
+bisa ditimpa di server tanpa mengubah image, misalnya lewat `docker-compose.override.yml`:
+
+```yaml
+services:
+  app:
+    volumes:
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/zz-cismart-uploads.ini:ro
+```
+
+Periksa nilai yang benar-benar aktif dengan `docker compose exec app php -i | grep -E 'upload_max_filesize|post_max_size'`.
+`post_max_size` harus lebih besar dari `upload_max_filesize` agar request multipart tidak terpotong.
+Setup juga wajib menjalankan `php artisan storage:link` agar file di disk `public` bisa dibuka.
+
 ### 3. Train ML Model di Container
 
 ```bash

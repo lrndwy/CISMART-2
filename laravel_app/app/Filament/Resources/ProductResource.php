@@ -106,9 +106,51 @@ class ProductResource extends Resource
 
                         FormsSelect::make('category_id')
                             ->label('Kategori')
-                            ->options(Category::pluck('name', 'id')->toArray())
+                            ->options(fn () => Category::query()->orderBy('name')->pluck('name', 'id')->toArray())
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            // Penjual boleh menambah kategori baru langsung dari input ini
+                            // kalau kategorinya belum ada (langsung aktif, tanpa approval).
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->label('Nama Kategori')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->helperText('Kalau nama ini sudah ada, kategori yang lama akan dipakai.'),
+
+                                Textarea::make('description')
+                                    ->label('Deskripsi (opsional)')
+                                    ->rows(3)
+                                    ->maxLength(500),
+                            ])
+                            ->createOptionUsing(function (array $data): int {
+                                $name = trim((string) ($data['name'] ?? ''));
+
+                                // Nama sama (tanpa peduli huruf besar/kecil) -> pakai kategori lama,
+                                // jangan bikin duplikat.
+                                $existing = Category::query()
+                                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                                    ->first();
+
+                                if ($existing) {
+                                    return $existing->getKey();
+                                }
+
+                                // slug unik: "makanan", "makanan-2", "makanan-3", ...
+                                $base = Str::slug($name) ?: 'kategori';
+                                $slug = $base;
+                                $suffix = 2;
+
+                                while (Category::query()->where('slug', $slug)->exists()) {
+                                    $slug = $base.'-'.$suffix++;
+                                }
+
+                                return Category::create([
+                                    'name' => $name,
+                                    'slug' => $slug,
+                                    'description' => $data['description'] ?? null,
+                                ])->getKey();
+                            }),
                     ])
                     ->columns(2),
 
@@ -215,6 +257,18 @@ class ProductResource extends Resource
                     ->sortable()
                     ->label("Stok")
                     ->color(fn($state) => $state > 0 ? 'success' : 'danger'),
+
+                Tables\Columns\TextColumn::make('rating')
+                    ->label('Rating')
+                    ->numeric(decimalPlaces: 2)
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('sold_count')
+                    ->label('Terjual')
+                    ->numeric()
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('is_featured')
                     ->label('Unggulan')

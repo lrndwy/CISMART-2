@@ -284,6 +284,62 @@
                         </div>
                     </div>
                 @else
+                    <div class="space-y-6">
+                        <div class="rounded-2xl border border-stone-200/70 bg-white p-6">
+                            <div class="flex items-center gap-4">
+                                <span class="text-3xl font-bold text-stone-900">{{ number_format($averageRating, 1) }}</span>
+                                <div>
+                                    <span class="text-amber-500">{{ str_repeat('★', (int) round($averageRating)) }}<span class="text-stone-300">{{ str_repeat('★', max(0, 5 - (int) round($averageRating))) }}</span></span>
+                                    <p class="text-xs text-stone-500">{{ $product->total_reviews ?? 0 }} ulasan produk</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($canReview)
+                            <div class="rounded-2xl border border-stone-200/70 bg-white p-6">
+                                <h3 class="text-sm font-semibold text-stone-900">Tulis ulasan produk</h3>
+                                <div class="mt-3 flex items-center gap-1">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <button type="button" wire:click="$set('rating', {{ $i }})"
+                                            class="text-2xl leading-none {{ $rating >= $i ? 'text-amber-500' : 'text-stone-300' }}">★</button>
+                                    @endfor
+                                    <span class="ml-2 text-xs text-stone-500">{{ $rating }}/5</span>
+                                </div>
+                                <textarea wire:model="comment" rows="3" placeholder="Ceritakan kualitas produk ini..."
+                                    class="mt-3 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"></textarea>
+                                @error('comment')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                                @error('rating')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                                <button wire:click="submitReview" wire:loading.attr="disabled"
+                                    class="mt-3 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50">
+                                    Kirim ulasan
+                                </button>
+                            </div>
+                        @elseif ($myReview)
+                            <p class="text-xs text-stone-500">Kamu sudah mengulas produk ini
+                                pada {{ $myReview->created_at->translatedFormat('d F Y') }}.</p>
+                        @endif
+
+                        @forelse ($reviews as $review)
+                            <div wire:key="review-{{ $review->id }}" class="rounded-2xl border border-stone-200/70 bg-white p-5">
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-600">
+                                            {{ $review->user?->initials() ?? 'U' }}
+                                        </span>
+                                        <div>
+                                            <p class="text-sm font-medium text-stone-900">{{ $review->user?->name ?? 'Pembeli' }}</p>
+                                            <p class="text-xs text-stone-500">{{ $review->created_at->translatedFormat('d F Y') }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm text-amber-500">{{ str_repeat('★', (int) $review->rating) }}<span class="text-stone-300">{{ str_repeat('★', 5 - (int) $review->rating) }}</span></span>
+                                </div>
+                                <p class="mt-3 text-sm leading-relaxed text-stone-600 whitespace-pre-line">{{ $review->comment }}</p>
+                            </div>
+                        @empty
                     <div class="rounded-2xl border border-dashed border-stone-300 bg-white p-12 text-center">
                         <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
                             <svg class="h-6 w-6 text-stone-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -291,7 +347,9 @@
                             </svg>
                         </span>
                         <h3 class="mt-4 text-sm font-semibold text-stone-900">Belum ada ulasan</h3>
-                        <p class="mt-1 text-xs text-stone-500">Ulasan dari pembeli yang pernah bertransaksi akan muncul di sini.</p>
+                        <p class="mt-1 text-xs text-stone-500">Ulasan dari pembeli yang sudah menerima produk akan muncul di sini.</p>
+                    </div>
+                        @endforelse
                     </div>
                 @endif
             </div>

@@ -23,7 +23,7 @@ class AdminTopShopsChart extends ChartWidget
     protected function getData(): array
     {
         $topShops = OrderItem::select('shop_id', DB::raw('SUM(subtotal) as total_sales'))
-            ->whereHas('order', fn($q) => $q->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']))
+            ->whereHas('order', fn($q) => $q->revenue())
             ->groupBy('shop_id')
             ->orderBy('total_sales', 'desc')
             ->limit(10)

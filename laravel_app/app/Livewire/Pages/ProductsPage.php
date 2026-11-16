@@ -187,10 +187,10 @@ class ProductsPage extends Component
                 $query->orderBy('price', 'desc');
                 break;
             case 'rating':
-                $query->orderBy('rating', 'desc');
+                $query->orderByDesc('rating')->orderByDesc('total_reviews');
                 break;
             case 'popular':
-                $query->orderBy('sold', 'desc');
+                $query->orderByDesc('sold_count')->orderByDesc('created_at');
                 break;
             default:
                 $query->orderBy('created_at', 'desc');

@@ -3,19 +3,55 @@ CISMART ML Service - UMKM Growth Forecasting & Stratification System
 Penelitian: PDP Dosen Pemula - 166PL43AL.04 2025
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from functools import wraps
+import glob
+import os
+import threading
+import traceback
+import uuid
+from datetime import datetime
+from werkzeug.utils import secure_filename
 import pandas as pd
 import numpy as np
 import joblib
-import os
-from datetime import datetime
-import traceback
 from ml_engine import UMKMClusteringEngine
 from validators import validate_umkm_input, validate_batch_input
 
 app = Flask(__name__)
-CORS(app)
+
+# Token internal: hanya Laravel (X-Internal-Token) yang boleh memicu training
+# atau prediksi. Bila INTERNAL_TOKEN kosong, endpoint tetap terbuka (mode dev)
+# tetapi menulis peringatan.
+INTERNAL_TOKEN = os.environ.get('INTERNAL_TOKEN', '').strip()
+CORS_ORIGINS = [o.strip() for o in os.environ.get('CORS_ORIGINS', '').split(',') if o.strip()]
+CORS(app, origins=CORS_ORIGINS or ['http://localhost:8000', 'http://127.0.0.1:8000'])
+
+MAX_KEPT_TRAINING_FILES = int(os.environ.get('ML_MAX_TRAINING_FILES', '10'))
+
+if not INTERNAL_TOKEN:
+    app.logger.warning('INTERNAL_TOKEN kosong: endpoint ML terbuka tanpa autentikasi. Set INTERNAL_TOKEN untuk produksi.')
+
+
+def require_token(fn):
+    """Wajib header X-Internal-Token bila INTERNAL_TOKEN dikonfigurasi."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if INTERNAL_TOKEN and request.headers.get('X-Internal-Token') != INTERNAL_TOKEN:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+def cleanup_training_files():
+    """Simpan hanya N file training terakhir (volume ml_data tidak tumbuh tanpa batas)."""
+    files = sorted(glob.glob(os.path.join(DATA_DIR, 'training_data_*')))
+    for path in files[:-MAX_KEPT_TRAINING_FILES]:
+        try:
+            os.remove(path)
+        except OSError as exc:  # pragma: no cover
+            app.logger.warning(f'Gagal menghapus file training lama {path}: {exc}')
 
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -81,6 +117,7 @@ def get_info():
     }), 200
 
 @app.route('/api/train', methods=['POST'])
+@require_token
 def train_model():
     """
     Train clustering and prediction models
@@ -96,7 +133,7 @@ def train_model():
         
         # Validate file extension
         allowed_extensions = {'xlsx', 'xls', 'csv'}
-        file_ext = file.filename.rsplit('.', 1)[1].lower()
+        file_ext = os.path.splitext(file.filename)[1].lstrip('.').lower()
         if file_ext not in allowed_extensions:
             return jsonify({'error': f'Invalid file type. Allowed: {allowed_extensions}'}), 400
         
@@ -105,17 +142,27 @@ def train_model():
         filename = f'training_data_{timestamp}.{file_ext}'
         filepath = os.path.join(DATA_DIR, filename)
         file.save(filepath)
-        
-        # Train models
-        app.logger.info(f"Starting training with file: {filename}")
-        result = ml_engine.train(filepath)
-        
+
+        cleanup_training_files()
+
+        # Training berjalan di thread terpisah: request tidak menunggu 5 menit
+        # (gunicorn timeout) dan pemanggil bisa memantau progres.
+        job_id = uuid.uuid4().hex
+        TRAINING_JOBS[job_id] = {
+            'status': 'running',
+            'file': filename,
+            'started_at': datetime.now().isoformat(),
+        }
+        app.logger.info(f"Training job {job_id} started with file: {filename}")
+        threading.Thread(target=_run_training_job, args=(job_id, filepath), daemon=True).start()
+
         return jsonify({
-            'status': 'success',
-            'message': 'Models trained successfully',
-            'result': result,
+            'status': 'accepted',
+            'message': 'Training started',
+            'job_id': job_id,
+            'status_url': f'/api/train/{job_id}',
             'timestamp': datetime.now().isoformat()
-        }), 200
+        }), 202
         
     except Exception as e:
         app.logger.error(f"Training error: {str(e)}\n{traceback.format_exc()}")
@@ -124,16 +171,60 @@ def train_model():
             'message': str(e)
         }), 500
 
+TRAINING_JOBS = {}
+TRAINING_LOCK = threading.Lock()
+
+
+def _run_training_job(job_id, filepath):
+    """Jalankan training dengan lock agar dua job tidak menimpa model bersamaan."""
+    with TRAINING_LOCK:
+        try:
+            result = ml_engine.train(filepath)
+            TRAINING_JOBS[job_id].update({
+                'status': 'completed',
+                'result': result,
+                'finished_at': datetime.now().isoformat(),
+            })
+        except Exception as e:  # pragma: no cover - dilaporkan ke pemanggil
+            app.logger.error(f"Training job {job_id} failed: {e}\n{traceback.format_exc()}")
+            TRAINING_JOBS[job_id].update({
+                'status': 'failed',
+                'error': str(e),
+                'finished_at': datetime.now().isoformat(),
+            })
+
+
+@app.route('/api/train/<job_id>', methods=['GET'])
+@require_token
+def training_status(job_id):
+    """Status job training yang dijalankan lewat POST /api/train."""
+    job = TRAINING_JOBS.get(job_id)
+
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    return jsonify({'job_id': job_id, **job}), 200
+
+
 @app.route('/api/predict', methods=['POST'])
+@require_token
 def predict_cluster():
     """
     Predict cluster for single UMKM
     Expects: JSON with UMKM features
     """
     try:
+        # Worker lain mungkin sudah menerima model hasil training terbaru:
+        # muat dari disk bila file model tersedia tapi memori belum terisi.
+        if ml_engine and not ml_engine.is_trained and os.path.exists(f'{MODELS_DIR}/rf_best_model.joblib'):
+            try:
+                ml_engine.load_models()
+            except Exception as exc:  # pragma: no cover - tergantung isi disk
+                app.logger.warning(f'Gagal memuat model dari disk: {exc}')
+
         if not ml_engine or not ml_engine.is_trained:
             return jsonify({'error': 'Models not trained yet'}), 400
-        
+
         # Get JSON data
         data = request.get_json()
         if not data:
@@ -161,6 +252,7 @@ def predict_cluster():
         }), 500
 
 @app.route('/api/predict-batch', methods=['POST'])
+@require_token
 def predict_batch():
     """
     Predict clusters for multiple UMKMs
@@ -180,7 +272,7 @@ def predict_batch():
         
         # Validate file
         allowed_extensions = {'xlsx', 'xls', 'csv'}
-        file_ext = file.filename.rsplit('.', 1)[1].lower()
+        file_ext = os.path.splitext(file.filename)[1].lstrip('.').lower()
         if file_ext not in allowed_extensions:
             return jsonify({'error': f'Invalid file type. Allowed: {allowed_extensions}'}), 400
         
@@ -215,6 +307,7 @@ def predict_batch():
         }), 500
 
 @app.route('/api/model-info', methods=['GET'])
+@require_token
 def get_model_info():
     """Get trained model information"""
     try:
@@ -239,15 +332,17 @@ def get_model_info():
         }), 500
 
 @app.route('/api/download/<filename>', methods=['GET'])
+@require_token
 def download_file(filename):
     """Download result files"""
     try:
-        filepath = os.path.join(DATA_DIR, filename)
-        if not os.path.exists(filepath):
+        safe_name = secure_filename(filename)
+        filepath = os.path.join(DATA_DIR, safe_name)
+
+        if not os.path.isfile(filepath):
             return jsonify({'error': 'File not found'}), 404
-        
-        from flask import send_file
-        return send_file(filepath, as_attachment=True)
+
+        return send_from_directory(DATA_DIR, safe_name, as_attachment=True)
         
     except Exception as e:
         app.logger.error(f"Download error: {str(e)}")

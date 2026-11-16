@@ -27,8 +27,7 @@ class SellerSalesChart extends ChartWidget
         $data = collect(range(6, 0))->map(function ($daysAgo) use ($shopIds) {
             $date = now()->subDays($daysAgo);
             $sales = OrderItem::whereIn('shop_id', $shopIds)
-                ->whereHas('order', fn($q) => $q->whereDate('created_at', $date)
-                    ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']))
+                ->whereHas('order', fn($q) => $q->whereDate('created_at', $date)->revenue())
                 ->sum('subtotal');
 
             return [

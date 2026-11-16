@@ -51,7 +51,7 @@ class AdminStatsOverview extends BaseWidget
             ->count();
         $revenueThisMonth = Order::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
-            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->revenue()
             ->sum('total');
 
         // Application stats

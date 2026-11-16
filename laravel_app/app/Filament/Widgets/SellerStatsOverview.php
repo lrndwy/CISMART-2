@@ -66,12 +66,12 @@ class SellerStatsOverview extends BaseWidget
 
         // Revenue stats
         $totalRevenue = OrderItem::whereIn('shop_id', $shopIds)
-            ->whereHas('order', fn($q) => $q->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']))
+            ->whereHas('order', fn($q) => $q->revenue())
             ->sum('subtotal');
         $revenueThisMonth = OrderItem::whereIn('shop_id', $shopIds)
             ->whereHas('order', fn($q) => $q->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
-                ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered']))
+                ->revenue())
             ->sum('subtotal');
 
         // ML Predictions for seller's shops

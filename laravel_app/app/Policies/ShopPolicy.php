@@ -27,8 +27,6 @@ class ShopPolicy
         if ($user->isSeller()) {
             return $shop->user_id === $user->id;
         }
-
-        // Buyers can only view approved shops
         return $user->isBuyer() && $shop->isApproved();
     }
 
@@ -37,7 +35,15 @@ class ShopPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isSeller();
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Toko dibuat otomatis saat permohonan disetujui: penjual hanya boleh
+        // membuat manual bila permohonannya disetujui dan ia belum punya toko.
+        return $user->isSeller()
+            && $user->sellerApplication()->where('status', 'approved')->exists()
+            && ! $user->shops()->exists();
     }
 
     /**

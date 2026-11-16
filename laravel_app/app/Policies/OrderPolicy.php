@@ -24,20 +24,37 @@ class OrderPolicy
      */
     public function view(User $user, Order $order): bool
     {
-        // Admin can view any order
         if ($user->hasRole('admin')) {
             return true;
         }
 
-        // Seller can view orders for their products
+        // Order kini milik satu toko: penjual pemilik toko itulah yang boleh melihat.
         if ($user->hasRole('seller')) {
-            return $order->items()->whereHas('shop', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->exists();
+            return $order->shop_id !== null
+                && $user->shops()->whereKey($order->shop_id)->exists();
         }
 
         // Users can view their own orders
         return $user->id === $order->user_id;
+    }
+
+    /**
+     * Pembeli membatalkan pesanannya sendiri yang belum diproses & belum terbayar.
+     */
+    public function cancel(User $user, Order $order): bool
+    {
+        return $user->id === $order->user_id
+            && in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CONFIRMED], true)
+            && $order->payment_status !== 'verified';
+    }
+
+    /**
+     * Pembeli mengonfirmasi penerimaan (setelah penjual mengirim).
+     */
+    public function confirmReceipt(User $user, Order $order): bool
+    {
+        return $user->id === $order->user_id
+            && $order->status === Order::STATUS_SHIPPED;
     }
 
     public function uploadPaymentProof(User $user, Order $order): bool
@@ -55,8 +72,8 @@ class OrderPolicy
      */
     public function create(User $user): bool
     {
-        // Admin and seller can create orders
-        return $user->hasAnyRole(['admin', 'seller']);
+        // Order dibuat lewat alur checkout (CheckoutPage) atau admin.
+        return $user->hasAnyRole(['admin', 'seller', 'buyer']);
     }
 
     /**
@@ -64,16 +81,13 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        // Admin can update any order
         if ($user->hasRole('admin')) {
             return true;
         }
 
-        // Seller can update orders for their products
         if ($user->hasRole('seller')) {
-            return $order->items()->whereHas('shop', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->exists();
+            return $order->shop_id !== null
+                && $user->shops()->whereKey($order->shop_id)->exists();
         }
 
         return false;

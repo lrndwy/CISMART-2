@@ -7,11 +7,15 @@ use App\Models\Product;
 use App\Models\SellerApplication;
 use App\Models\Shop;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
+    // Filament v4 butuh panel aktif agar skema form (CreateShop) bisa diuji.
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+
     Role::findOrCreate('seller');
     Role::findOrCreate('buyer');
 });
@@ -82,18 +86,18 @@ it('approves the applicant shops when the seller application is approved', funct
     expect($shop->fresh()->status)->toBe('approved');
 });
 
-it('creates a seller shop as pending while the application is not approved', function () {
-    $this->actingAs(shopOwner('createshop@toko.test'));
+it('menolak penjual tanpa permohonan disetujui membuat toko manual', function () {
+    $seller = shopOwner('createshop@toko.test');
+    $this->actingAs($seller);
 
-    Livewire::test(CreateShop::class)
-        ->fillForm(['name' => 'Toko Baru', 'slug' => 'toko-baru-uji'])
-        ->call('create')
-        ->assertHasNoFormErrors();
+    // Toko dibuat otomatis saat approve; penjual pending tidak boleh membuat sendiri.
+    expect(\App\Filament\Resources\ShopResource::canCreate())->toBeFalse();
+    expect(\Illuminate\Support\Facades\Gate::forUser($seller)->allows('create', Shop::class))->toBeFalse();
 
-    expect(Shop::where('slug', 'toko-baru-uji')->firstOrFail()->status)->toBe('pending');
+    expect(Shop::count())->toBe(0);
 });
 
-it('creates a seller shop as approved once the application is approved', function () {
+it('membuat toko sebagai approved setelah permohonan disetujui', function () {
     $seller = shopOwner('approvedshop@toko.test');
 
     SellerApplication::create([
@@ -109,8 +113,11 @@ it('creates a seller shop as approved once the application is approved', functio
 
     $this->actingAs($seller);
 
+    // Catatan: fillForm() Filament v4 tidak menulis state di harness ini,
+    // jadi state form diisi langsung lewat set('data.*').
     Livewire::test(CreateShop::class)
-        ->fillForm(['name' => 'Toko Kedua', 'slug' => 'toko-kedua-uji'])
+        ->set('data.name', 'Toko Kedua')
+        ->set('data.slug', 'toko-kedua-uji')
         ->call('create')
         ->assertHasNoFormErrors();
 

@@ -10,6 +10,27 @@
             @endif
         </div>
 
+        @if ($notifications->isNotEmpty())
+            <div class="mb-6 rounded-2xl border border-stone-200/70 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-sm font-semibold text-stone-900">Notifikasi</h2>
+                    <button wire:click="markNotificationsRead"
+                        class="text-xs font-medium text-green-700 hover:underline">Tandai sudah dibaca</button>
+                </div>
+                <ul class="mt-3 space-y-2">
+                    @foreach ($notifications as $notification)
+                        <li wire:key="notif-{{ $notification->id }}" class="rounded-lg bg-stone-50 px-3 py-2 text-xs">
+                            <span class="font-medium text-stone-800">{{ $notification->data['title'] ?? 'Pembaruan' }}</span>
+                            <span class="text-stone-500">— {{ $notification->data['body'] ?? '' }}</span>
+                            @if (is_null($notification->read_at))
+                                <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">baru</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         @if ($orders->isEmpty())
             <div class="rounded-2xl border border-stone-200/70 bg-white py-16 text-center shadow-[0_1px_2px_rgba(28,25,23,0.05)]">
                 <svg class="h-12 w-12 text-stone-300 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -105,6 +126,20 @@
                                 <p class="text-sm font-bold text-stone-900 tabular-nums">
                                     Rp {{ number_format($order->total, 0, ',', '.') }}
                                 </p>
+                                @if (in_array($order->status, ['pending', 'confirmed'], true) && $order->payment_status !== 'verified')
+                                    <button wire:click="cancelOrder({{ $order->id }})"
+                                        wire:confirm="Batalkan pesanan ini?"
+                                        class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:border-red-400 hover:text-red-600 transition whitespace-nowrap">
+                                        Batalkan
+                                    </button>
+                                @endif
+                                @if ($order->status === 'shipped')
+                                    <button wire:click="confirmReceipt({{ $order->id }})"
+                                        wire:confirm="Konfirmasi pesanan sudah kamu terima?"
+                                        class="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-800 transition whitespace-nowrap">
+                                        Pesanan diterima
+                                    </button>
+                                @endif
                                 @if ($order->isQris())
                                     <a href="{{ route('orders.pay', $order) }}"
                                         class="inline-flex items-center gap-1.5 rounded-lg bg-green-700 text-white px-4 py-2 text-sm font-medium hover:bg-green-800 active:scale-[0.98] transition whitespace-nowrap">
